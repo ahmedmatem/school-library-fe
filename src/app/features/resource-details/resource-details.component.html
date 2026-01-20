@@ -1,0 +1,45 @@
+@if (resource(); as r) {
+<div class="d-flex justify-content-between align-items-start gap-3">
+    <div>
+        <h3 class="mb-1">{{ r.title }}</h3>
+        <div class="text-muted">
+            {{ r.author || '—' }} • {{ r.subject }} • {{ r.format }} • {{ r.type === 'FILE' ? 'Файл' : 'Линк' }}
+        </div>
+    </div>
+
+    <button class="btn" [class.btn-success]="isSaved()" [class.btn-outline-success]="!isSaved()" type="button"
+        (click)="toggleSaved()">
+        @if (isSaved()) { Запазено } @else { Запази }
+    </button>
+</div>
+
+<p class="mt-3">{{ r.description || 'Няма описание.' }}</p>
+
+<div class="d-flex flex-wrap gap-1 mb-4">
+    @for (t of r.tags; track t) {
+    <span class="badge text-bg-light border">{{ t }}</span>
+    }
+</div>
+
+<div class="card">
+    <div class="card-body">
+        @if (r.type === 'FILE') {
+        @if (r.format === 'PDF' && r.fileUrl) {
+        <div class="ratio ratio-16x9">
+            <iframe [src]="safePdfUrl()" title="PDF"></iframe>
+        </div>
+        } @else {
+        <a class="btn btn-primary" [href]="r.fileUrl" target="_blank">Изтегли / Отвори файла</a>
+        }
+        } @else {
+        <a class="btn btn-primary" [href]="r.externalUrl" target="_blank" rel="noopener">Отвори външен линк</a>
+        }
+    </div>
+</div>
+
+<div class="mt-3">
+    <a routerLink="/catalog" class="btn btn-link px-0">← Назад към каталога</a>
+</div>
+} @else {
+<div class="alert alert-warning">Ресурсът не е намерен.</div>
+}

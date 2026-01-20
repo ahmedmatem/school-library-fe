@@ -1,0 +1,41 @@
+[
+  {
+    "id": "r1",
+    "title": "Под игото (откъс) – PDF",
+    "author": "Иван Вазов",
+    "description": "Учебен откъс за анализ.",
+    "type": "FILE",
+    "format": "PDF",
+    "subject": "БЕЛ",
+    "language": "bg",
+    "tags": ["възраждане", "роман", "анализ"],
+    "createdAt": "2026-01-10T10:00:00Z",
+    "fileUrl": "/assets/mock/sample.pdf"
+  },
+  {
+    "id": "r2",
+    "title": "Видео: Клетката и органелите",
+    "author": "Училищен канал",
+    "description": "Кратко видео за 7. клас.",
+    "type": "LINK",
+    "format": "VIDEO",
+    "subject": "Биология",
+    "language": "bg",
+    "tags": ["клетка", "7 клас"],
+    "createdAt": "2026-01-12T10:00:00Z",
+    "externalUrl": "https://example.com/video"
+  },
+  {
+    "id": "r3",
+    "title": "Презентация: Българско възраждане",
+    "author": "История - екип",
+    "description": "Презентация за урок.",
+    "type": "FILE",
+    "format": "PPT",
+    "subject": "История",
+    "language": "bg",
+    "tags": ["възраждане", "урок"],
+    "createdAt": "2026-01-14T10:00:00Z",
+    "fileUrl": "/assets/mock/sample.pptx"
+  }
+]
