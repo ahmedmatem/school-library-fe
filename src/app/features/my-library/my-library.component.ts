@@ -23,21 +23,18 @@ export class MyLibraryComponent {
   collections = this.lib.collections;
 
   savedResources = computed(() => {
-    const ids = this.lib.savedIds();
-    const all = this.rs.resources(); // filtered; по-добре да ползваме суровите, но за MVP е OK
-    // За да покажем всички запазени, ще reload-нем store и ще разчитаме allSig вътре.
-    // Ако искаш 100% коректно: направи в ResourceStore отделен computed за all.
-    return all.filter(r => ids.has(r.id));
-  });
+  const ids = this.lib.savedIds();
+  const all = this.rs.allResources();
+  return all.filter(r => ids.has(r.id));
+});
 
-  // helper: computed factory for resources in the collection
-  collectionResources = (collectionId: string) => computed(() => {
-    const col = this.lib.collections().find(c => c.id === collectionId);
-    if (!col) return [];
-    const ids = new Set(col.resourceIds);
-    const all = this.rs.resources();
-    return all.filter(r => ids.has(r.id));
-  });
+collectionResources = (collectionId: string) => computed(() => {
+  const col = this.lib.collections().find(c => c.id === collectionId);
+  if (!col) return [];
+  const ids = new Set(col.resourceIds);
+  const all = this.rs.allResources();
+  return all.filter(r => ids.has(r.id));
+});
 
   toggleSaved(id: string) { this.lib.toggleSaved(id); }
 

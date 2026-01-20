@@ -12,6 +12,16 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">Таг</label>
+                    <select class="form-select" [value]="filters().tag" (change)="onTag($any($event.target).value)">
+                        <option value="">Всички</option>
+                        @for (t of tags(); track t) {
+                        <option [value]="t">{{ t }}</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label">Предмет</label>
                     <select class="form-select" [value]="filters().subject"
                         (change)="onSubject($any($event.target).value)">

@@ -21,6 +21,7 @@ export class CatalogComponent {
   ];
   formats = ['PDF', 'EPUB', 'VIDEO', 'AUDIO', 'DOC', 'PPT', 'OTHER'];
 
+  tags = this.rs.allTags;
   filters = this.rs.filters;
   resources = this.rs.resources;
 
@@ -43,4 +44,6 @@ export class CatalogComponent {
     if (!collectionId) return;
     this.lib.addToCollection(collectionId, resourceId);
   }
+
+  onTag(v: string) { this.rs.setTag(v); }
 }
