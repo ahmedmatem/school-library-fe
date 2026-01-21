@@ -8,6 +8,15 @@
 
         <div id="nav" class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto">
+                @if (auth.isTeacher()) {
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/teacher/add" routerLinkActive="active">Добави ресурс</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/teacher/pending" routerLinkActive="active">Чакащи</a>
+                </li>
+                }
+
                 <li class="nav-item">
                     <a class="nav-link" routerLink="/catalog" routerLinkActive="active">Каталог</a>
                 </li>
