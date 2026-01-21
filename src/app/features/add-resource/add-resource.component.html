@@ -1,0 +1,105 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Добави ресурс</h3>
+    <a class="btn btn-outline-secondary" routerLink="/teacher/pending">Към чакащи</a>
+</div>
+
+@if (!isTeacher()) {
+<div class="alert alert-warning">
+    Само учители могат да добавят ресурси.
+</div>
+} @else {
+<div class="card">
+    <div class="card-body">
+        <div class="row g-3">
+
+            <div class="col-12">
+                <label class="form-label">Заглавие *</label>
+                <input class="form-control" [value]="title()" (input)="title.set($any($event.target).value)" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Автор</label>
+                <input class="form-control" [value]="author()" (input)="author.set($any($event.target).value)" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Предмет *</label>
+                <input class="form-control" [value]="subject()" (input)="subject.set($any($event.target).value)"
+                    placeholder="напр. БЕЛ, История" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Описание</label>
+                <textarea class="form-control" rows="3" [value]="description()"
+                    (input)="description.set($any($event.target).value)"></textarea>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label class="form-label">Тип *</label>
+                <select class="form-select" [value]="type()" (change)="type.set($any($event.target).value)">
+                    <option value="FILE">Файл</option>
+                    <option value="LINK">Линк</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label class="form-label">Формат *</label>
+                <select class="form-select" [value]="format()" (change)="format.set($any($event.target).value)">
+                    @for (f of availableFormats(); track f) {
+                    <option [value]="f">{{ f }}</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label class="form-label">Език</label>
+                <input class="form-control" [value]="language()" (input)="language.set($any($event.target).value)" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Тагове (разделени със запетая)</label>
+                <input class="form-control" [value]="tagsText()" (input)="tagsText.set($any($event.target).value)"
+                    placeholder="напр. възраждане, анализ, 7 клас" />
+            </div>
+
+            @if (type() === 'LINK') {
+            <div class="col-12">
+                <label class="form-label">Външен линк (https://...) *</label>
+                <input class="form-control" [value]="externalUrl()"
+                    (input)="externalUrl.set($any($event.target).value)" />
+                @if (externalUrl() && !isValidUrl()) {
+                <div class="text-danger small mt-1">Невалиден URL.</div>
+                }
+            </div>
+            }
+
+            @if (type() === 'FILE') {
+            <div class="col-12">
+                <label class="form-label">Път до файл *</label>
+                <input class="form-control" [value]="fileUrl()" (input)="fileUrl.set($any($event.target).value)"
+                    placeholder="/assets/... или друг публичен път" />
+                <div class="form-text">
+                    За момента използвай публичен път. Реалният upload ще е в backend-а.
+                </div>
+            </div>
+            }
+
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" type="button" [disabled]="!canSubmit()" (click)="submit()">
+                    Изпрати за одобрение
+                </button>
+                <button class="btn btn-outline-secondary" type="button" (click)="resetForm()">
+                    Изчисти
+                </button>
+            </div>
+
+            @if (message()) {
+            <div class="col-12">
+                <div class="alert alert-success mb-0">{{ message() }}</div>
+            </div>
+            }
+
+        </div>
+    </div>
+</div>
+}

@@ -1,0 +1,56 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="mb-0">Чакащи ресурси</h3>
+        <div class="text-muted small">Тук учител одобрява или отхвърля добавени ресурси.</div>
+    </div>
+    <a class="btn btn-outline-primary" routerLink="/teacher/add">+ Добави ресурс</a>
+</div>
+
+@if (!isTeacher()) {
+<div class="alert alert-warning">
+    Само учители имат достъп до чакащи ресурси.
+</div>
+} @else {
+@if (pending().length === 0) {
+<div class="alert alert-info">Няма чакащи ресурси.</div>
+} @else {
+<div class="list-group">
+    @for (p of pending(); track p.pendingId) {
+    <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+            <div>
+                <div class="fw-semibold">{{ p.resource.title }}</div>
+                <div class="small text-muted">
+                    {{ p.resource.author || '—' }} • {{ p.resource.subject }} • {{ p.resource.format }} •
+                    {{ p.resource.type === 'FILE' ? 'Файл' : 'Линк' }}
+                </div>
+                @if (p.resource.description) {
+                <div class="small mt-2">{{ p.resource.description }}</div>
+                }
+                <div class="small text-muted mt-2">
+                    Подаден: {{ p.submittedAt }}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-success" type="button" (click)="approve(p.pendingId)">
+                    Одобри
+                </button>
+                <button class="btn btn-sm btn-outline-danger" type="button" (click)="reject(p.pendingId)">
+                    Отхвърли
+                </button>
+            </div>
+        </div>
+
+        @if (p.resource.tags.length > 0) {
+        <div class="d-flex flex-wrap gap-1 mt-3">
+            @for (t of p.resource.tags; track t) {
+            <span class="badge text-bg-light border">{{ t }}</span>
+            }
+        </div>
+        }
+    </div>
+    }
+</div>
+}
+}

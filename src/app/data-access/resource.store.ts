@@ -1,6 +1,7 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Filters, ResourceModel } from './models/resource.model';
+import { Filters, Resource } from './models/resource.model';
+import { ModerationStore } from './moderation.store';
 
 const DEFAULT_FILTERS: Filters = {
   query: '',
@@ -12,27 +13,45 @@ const DEFAULT_FILTERS: Filters = {
 
 @Injectable({ providedIn: 'root' })
 export class ResourceStore {
-  private allResources = signal<ResourceModel[]>([]);
+  private baseResources = signal<Resource[]>([]);
   private loaded = signal(false);
 
-  // UI filters (instant)
   filters = signal<Filters>({ ...DEFAULT_FILTERS });
 
-  // Debounced ONLY query (best UX)
   private debouncedQuery = signal('');
 
-  // Public: all resources (unfiltered)
-  all = computed(() => this.allResources());
+  allResources = computed(() => {
+    const base = this.baseResources();
+    const approved = this.moderation.approved();
+    return [...approved, ...base];
+  });
 
-  // Public: unique tags (for dropdown)
   allTags = computed(() => {
     const set = new Set<string>();
-    for (const r of this.allResources())
-      for (const t of r.tags) set.add(t);
+    for (const r of this.allResources()) for (const t of r.tags) set.add(t);
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   });
 
-  // Catalog resources (filtered)
+  subjects = computed(() => {
+    const set = new Set<string>();
+    for (const r of this.allResources()) set.add(r.subject);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  });
+
+  formats = computed(() => {
+    const set = new Set<string>();
+    for (const r of this.allResources()) set.add(r.format);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  });
+
+  types = computed(() => {
+    const set = new Set<Resource['type']>();
+    for (const r of this.allResources()) set.add(r.type);
+    const arr = Array.from(set);
+    arr.sort((a, b) => (a === 'FILE' ? -1 : a === 'LINK' && b === 'FILE' ? 1 : `${a}`.localeCompare(`${b}`)));
+    return arr;
+  });
+
   resources = computed(() => {
     const list = this.allResources();
     const f = this.filters();
@@ -51,29 +70,7 @@ export class ResourceStore {
     });
   });
 
-  subjects = computed(() => {
-    const set = new Set<string>();
-    for (const r of this.allResources()) set.add(r.subject);
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  });
-
-  formats = computed(() => {
-    const set = new Set<string>();
-    for (const r of this.allResources()) set.add(r.format);
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  });
-
-  types = computed(() => {
-    const set = new Set<string>();
-    for (const r of this.allResources()) set.add(r.type);
-    // order FILE then LINK
-    const arr = Array.from(set);
-    arr.sort((a, b) => (a === 'FILE' ? -1 : a === 'LINK' && b === 'FILE' ? 1 : a.localeCompare(b)));
-    return arr as Array<'FILE' | 'LINK'>;
-  });
-
-  constructor(private http: HttpClient) {
-    // Debounce ONLY query
+  constructor(private http: HttpClient, private moderation: ModerationStore) {
     effect((onCleanup) => {
       const q = this.filters().query;
       const handle = setTimeout(() => this.debouncedQuery.set(q), 300);
@@ -84,19 +81,18 @@ export class ResourceStore {
   ensureLoaded(): void {
     if (this.loaded()) return;
 
-    this.http.get<ResourceModel[]>('/assets/mock/resources.json').subscribe({
+    this.http.get<Resource[]>('/assets/mock/resources.json').subscribe({
       next: (data) => {
-        this.allResources.set(data ?? []);
+        this.baseResources.set(data ?? []);
         this.loaded.set(true);
       },
       error: () => {
-        this.allResources.set([]);
+        this.baseResources.set([]);
         this.loaded.set(true);
       }
     });
   }
 
-  // usefull setters
   setQuery(query: string) { this.filters.update(f => ({ ...f, query })); }
   setSubject(subject: string) { this.filters.update(f => ({ ...f, subject })); }
   setType(type: Filters['type']) { this.filters.update(f => ({ ...f, type })); }

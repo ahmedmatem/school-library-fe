@@ -1,7 +1,7 @@
 export type ResourceType = 'FILE' | 'LINK';
 export type ResourceFormat = 'PDF' | 'EPUB' | 'VIDEO' | 'AUDIO' | 'DOC' | 'PPT' | 'OTHER';
 
-export interface ResourceModel {
+export interface Resource {
   id: string;
   title: string;
   author?: string;
