@@ -24,7 +24,7 @@ export class MyLibraryComponent {
 
   savedResources = computed(() => {
   const ids = this.lib.savedIds();
-  const all = this.rs.allResources();
+  const all = this.rs.all();
   return all.filter(r => ids.has(r.id));
 });
 
@@ -32,7 +32,7 @@ collectionResources = (collectionId: string) => computed(() => {
   const col = this.lib.collections().find(c => c.id === collectionId);
   if (!col) return [];
   const ids = new Set(col.resourceIds);
-  const all = this.rs.allResources();
+  const all = this.rs.all();
   return all.filter(r => ids.has(r.id));
 });
 

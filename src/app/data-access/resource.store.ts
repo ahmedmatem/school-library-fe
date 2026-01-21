@@ -12,8 +12,8 @@ const DEFAULT_FILTERS: Filters = {
 
 @Injectable({ providedIn: 'root' })
 export class ResourceStore {
-  private _allResources = signal<ResourceModel[]>([]);
-  private loading = signal(false);
+  private allResources = signal<ResourceModel[]>([]);
+  private loaded = signal(false);
 
   // UI filters (instant)
   filters = signal<Filters>({ ...DEFAULT_FILTERS });
@@ -22,19 +22,19 @@ export class ResourceStore {
   private debouncedQuery = signal('');
 
   // Public: all resources (unfiltered)
-  allResources = computed(() => this._allResources());
+  all = computed(() => this.allResources());
 
   // Public: unique tags (for dropdown)
   allTags = computed(() => {
     const set = new Set<string>();
-    for (const r of this._allResources())
+    for (const r of this.allResources())
       for (const t of r.tags) set.add(t);
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   });
 
   // Catalog resources (filtered)
   resources = computed(() => {
-    const list = this._allResources();
+    const list = this.allResources();
     const f = this.filters();
     const q = this.debouncedQuery().trim().toLowerCase();
 
@@ -53,19 +53,19 @@ export class ResourceStore {
 
   subjects = computed(() => {
     const set = new Set<string>();
-    for (const r of this._allResources()) set.add(r.subject);
+    for (const r of this.allResources()) set.add(r.subject);
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   });
 
   formats = computed(() => {
     const set = new Set<string>();
-    for (const r of this._allResources()) set.add(r.format);
+    for (const r of this.allResources()) set.add(r.format);
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   });
 
   types = computed(() => {
     const set = new Set<string>();
-    for (const r of this._allResources()) set.add(r.type);
+    for (const r of this.allResources()) set.add(r.type);
     // order FILE then LINK
     const arr = Array.from(set);
     arr.sort((a, b) => (a === 'FILE' ? -1 : a === 'LINK' && b === 'FILE' ? 1 : a.localeCompare(b)));
@@ -82,16 +82,16 @@ export class ResourceStore {
   }
 
   ensureLoaded(): void {
-    if (this.loading()) return;
+    if (this.loaded()) return;
 
     this.http.get<ResourceModel[]>('/assets/mock/resources.json').subscribe({
       next: (data) => {
-        this._allResources.set(data ?? []);
-        this.loading.set(true);
+        this.allResources.set(data ?? []);
+        this.loaded.set(true);
       },
       error: () => {
-        this._allResources.set([]);
-        this.loading.set(true);
+        this.allResources.set([]);
+        this.loaded.set(true);
       }
     });
   }
@@ -106,6 +106,6 @@ export class ResourceStore {
   clearFilters() { this.filters.set({ ...DEFAULT_FILTERS }); }
 
   getById(id: string) {
-    return computed(() => this._allResources().find(x => x.id === id));
+    return computed(() => this.allResources().find(x => x.id === id));
   }
 }
