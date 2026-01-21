@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { LibraryStore } from '../../data-access/library.store';
 import { ResourceStore } from '../../data-access/resource.store';
+import { AuthStore } from '../../data-access/auth.store';
 
 @Component({
   selector: 'app-add-to-collection-modal',
@@ -11,15 +12,15 @@ import { ResourceStore } from '../../data-access/resource.store';
 export class AddToCollectionModalComponent {
   private lib = inject(LibraryStore);
   private rs = inject(ResourceStore);
-  
-  // От Catalog ще сетваме този id (signal) преди да отворим модала
+  auth = inject(AuthStore);
+
+  // resource selected from Catalog before opening modal
   resourceId = signal<string>('');
 
-  selectedCollectionId = signal<string>('');
+  // NEW: create collection state
   newCollectionName = signal<string>('');
+  createShared = signal<boolean>(false);
   message = signal<string>('');
-
-  collections = this.lib.collections;
 
   resource = computed(() => {
     const id = this.resourceId();
@@ -27,39 +28,49 @@ export class AddToCollectionModalComponent {
     return this.rs.getById(id)();
   });
 
-  canAdd = computed(() => {
-    return !!this.resourceId() && !!this.selectedCollectionId();
+  // NEW: role-based allowed collections
+  allowedCollections = computed(() => {
+    const cols = this.lib.collections();
+    if (this.auth.isTeacher()) return cols;          // teacher: PRIVATE + SHARED
+    return cols.filter(c => c.scope === 'PRIVATE');  // student: only PRIVATE
   });
 
+  constructor() {
+    this.rs.ensureLoaded();
+  }
+
+  // called by Catalog before opening the modal
   openFor(resourceId: string) {
     this.resourceId.set(resourceId);
-    this.selectedCollectionId.set('');
     this.newCollectionName.set('');
+    this.createShared.set(false);
     this.message.set('');
   }
 
+  // NEW: toggle add/remove in collection
+  toggleInCollection(collectionId: string) {
+    const rid = this.resourceId();
+    if (!rid) return;
+
+    const col = this.lib.collections().find(c => c.id === collectionId);
+    if (!col) return;
+
+    if (col.resourceIds.includes(rid)) this.lib.removeFromCollection(collectionId, rid);
+    else this.lib.addToCollection(collectionId, rid);
+  }
+
+  // NEW: create new collection (PRIVATE by default, SHARED only for teachers if checked)
   createCollection() {
     const name = this.newCollectionName().trim();
     if (!name) return;
 
-    this.lib.createCollection(name);
-    // избери новосъздадената (тя се добавя най-отгоре)
-    const first = this.lib.collections()[0];
-    if (first) this.selectedCollectionId.set(first.id);
+    const scope = this.auth.isTeacher() && this.createShared() ? 'SHARED' : 'PRIVATE';
+    this.lib.createCollection(name, scope);
 
     this.newCollectionName.set('');
+    this.createShared.set(false);
+
     this.message.set('Колекцията е създадена.');
-    // махни съобщението след малко
-    setTimeout(() => this.message.set(''), 1500);
-  }
-
-  add() {
-    const colId = this.selectedCollectionId();
-    const resId = this.resourceId();
-    if (!colId || !resId) return;
-
-    this.lib.addToCollection(colId, resId);
-    this.message.set('Ресурсът е добавен към колекцията.');
-    setTimeout(() => this.message.set(''), 1500);
+    setTimeout(() => this.message.set(''), 1200);
   }
 }
