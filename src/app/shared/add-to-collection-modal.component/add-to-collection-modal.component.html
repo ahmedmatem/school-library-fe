@@ -1,0 +1,59 @@
+<div class="modal fade" id="addToCollectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Добави в колекция</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+            </div>
+
+            <div class="modal-body">
+                @if (resource(); as r) {
+                <div class="mb-3">
+                    <div class="fw-semibold">{{ r.title }}</div>
+                    <div class="small text-muted">{{ r.subject }} • {{ r.format }}</div>
+                </div>
+                } @else {
+                <div class="alert alert-warning mb-3">Няма избран ресурс.</div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label">Избери колекция</label>
+                    <select class="form-select" [value]="selectedCollectionId()"
+                        (change)="selectedCollectionId.set($any($event.target).value)">
+                        <option value="">— Избери —</option>
+                        @for (c of collections(); track c.id) {
+                        <option [value]="c.id">{{ c.name }}</option>
+                        }
+                    </select>
+                    @if (collections().length === 0) {
+                    <div class="form-text">Нямаш колекции. Създай нова по-долу.</div>
+                    }
+                </div>
+
+                <div class="border rounded p-3">
+                    <div class="fw-semibold mb-2">Нова колекция</div>
+                    <div class="input-group">
+                        <input class="form-control" placeholder="Име на колекция" [value]="newCollectionName()"
+                            (input)="newCollectionName.set($any($event.target).value)">
+                        <button class="btn btn-outline-primary" type="button" (click)="createCollection()">
+                            Създай
+                        </button>
+                    </div>
+                </div>
+
+                @if (message()) {
+                <div class="alert alert-success mt-3 mb-0">{{ message() }}</div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отказ</button>
+                <button type="button" class="btn btn-primary" [disabled]="!canAdd()" (click)="add()">
+                    Добави
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>

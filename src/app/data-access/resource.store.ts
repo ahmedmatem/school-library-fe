@@ -51,6 +51,27 @@ export class ResourceStore {
     });
   });
 
+  subjects = computed(() => {
+    const set = new Set<string>();
+    for (const r of this._allResources()) set.add(r.subject);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  });
+
+  formats = computed(() => {
+    const set = new Set<string>();
+    for (const r of this._allResources()) set.add(r.format);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  });
+
+  types = computed(() => {
+    const set = new Set<string>();
+    for (const r of this._allResources()) set.add(r.type);
+    // order FILE then LINK
+    const arr = Array.from(set);
+    arr.sort((a, b) => (a === 'FILE' ? -1 : a === 'LINK' && b === 'FILE' ? 1 : a.localeCompare(b)));
+    return arr as Array<'FILE' | 'LINK'>;
+  });
+
   constructor(private http: HttpClient) {
     // Debounce ONLY query
     effect((onCleanup) => {

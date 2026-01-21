@@ -1,18 +1,21 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ViewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ResourceStore } from '../../data-access/resource.store';
 import { LibraryStore } from '../../data-access/library.store';
+import { AddToCollectionModalComponent } from '../../shared/add-to-collection-modal.component/add-to-collection-modal.component';
 
 @Component({
   selector: 'app-catalog',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AddToCollectionModalComponent],
   templateUrl: './catalog.component.html',
   styleUrl: './catalog.component.css',
 })
 export class CatalogComponent {
   private rs = inject(ResourceStore);
   private lib = inject(LibraryStore);
+
+  @ViewChild(AddToCollectionModalComponent) addModal?: AddToCollectionModalComponent;
 
   subjects = ['БЕЛ', 'История', 'Биология'];
   types = [
@@ -27,7 +30,9 @@ export class CatalogComponent {
 
   collections = computed(() => this.lib.collections());
 
-  constructor() { this.rs.ensureLoaded(); }
+  constructor() { 
+    this.rs.ensureLoaded(); 
+  }
 
   // handlers
   onQuery(v: string) { this.rs.setQuery(v); }
@@ -43,6 +48,16 @@ export class CatalogComponent {
   addToCollection(collectionId: string, resourceId: string) {
     if (!collectionId) return;
     this.lib.addToCollection(collectionId, resourceId);
+  }
+  
+  openAddToCollection(resourceId: string) {
+    this.addModal?.openFor(resourceId);
+
+    // Bootstrap modal (vanilla JS)
+    const el = document.getElementById('addToCollectionModal');
+    // @ts-ignore
+    const modal = new bootstrap.Modal(el);
+    modal.show();
   }
 
   onTag(v: string) { this.rs.setTag(v); }
