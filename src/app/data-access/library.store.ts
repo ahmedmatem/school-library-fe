@@ -1,8 +1,11 @@
 import { Injectable, computed, signal } from '@angular/core';
 
+export type CollectionScope = 'PRIVATE' | 'SHARED';
+
 export interface Collection {
   id: string;
   name: string;
+  scope: CollectionScope;
   resourceIds: string[];
   createdAt: string;
 }
@@ -19,64 +22,73 @@ function uid(prefix = 'c'): string {
 
 @Injectable({ providedIn: 'root' })
 export class LibraryStore {
-  private savedIdsSig = signal<Set<string>>(new Set<string>(
+  private _savedIds = signal<Set<string>>(new Set<string>(
     safeParse<string[]>(localStorage.getItem(SAVED_KEY), [])
   ));
 
-  private collectionsSig = signal<Collection[]>(
-    safeParse<Collection[]>(localStorage.getItem(COLLECTIONS_KEY), [])
+  private _collections = signal<Collection[]>(
+    safeParse<any[]>(localStorage.getItem(COLLECTIONS_KEY), []).map(c => ({
+      id: c.id,
+      name: c.name,
+      scope: c.scope ?? 'PRIVATE',
+      resourceIds: Array.isArray(c.resourceIds) ? c.resourceIds : [],
+      createdAt: c.createdAt ?? new Date().toISOString(),
+    }))
   );
 
-  savedIds = computed(() => this.savedIdsSig());
-  collections = computed(() => this.collectionsSig());
+  savedIds = computed(() => this._savedIds());
+  collections = computed(() => this._collections());
+  privateCollections = computed(() => this._collections().filter(c => c.scope === 'PRIVATE'));
+  sharedCollections = computed(() => this._collections().filter(c => c.scope === 'SHARED'));
+
 
   isSaved(id: string) {
-    return computed(() => this.savedIdsSig().has(id));
+    return computed(() => this._savedIds().has(id));
   }
 
   toggleSaved(id: string): void {
-    const next = new Set(this.savedIdsSig());
+    const next = new Set(this._savedIds());
     if (next.has(id)) next.delete(id);
     else next.add(id);
 
-    this.savedIdsSig.set(next);
+    this._savedIds.set(next);
     localStorage.setItem(SAVED_KEY, JSON.stringify(Array.from(next)));
   }
 
-  createCollection(name: string): void {
+  createCollection(name: string, scope: CollectionScope = 'PRIVATE'): void {
     const trimmed = name.trim();
     if (!trimmed) return;
 
     const next = [
-      { id: uid('col'), name: trimmed, resourceIds: [], createdAt: new Date().toISOString() },
-      ...this.collectionsSig(),
+      { id: uid('col'), name: trimmed, scope, resourceIds: [], createdAt: new Date().toISOString() },
+      ...this._collections(),
     ];
-    this.collectionsSig.set(next);
+    this._collections.set(next);
     localStorage.setItem(COLLECTIONS_KEY, JSON.stringify(next));
   }
 
   addToCollection(collectionId: string, resourceId: string): void {
-    const next = this.collectionsSig().map(c => {
+    const next = this._collections().map(c => {
       if (c.id !== collectionId) return c;
       if (c.resourceIds.includes(resourceId)) return c;
       return { ...c, resourceIds: [...c.resourceIds, resourceId] };
     });
-    this.collectionsSig.set(next);
+    this._collections.set(next);
     localStorage.setItem(COLLECTIONS_KEY, JSON.stringify(next));
   }
 
   removeFromCollection(collectionId: string, resourceId: string): void {
-    const next = this.collectionsSig().map(c => {
+    const next = this._collections().map(c => {
       if (c.id !== collectionId) return c;
       return { ...c, resourceIds: c.resourceIds.filter(x => x !== resourceId) };
     });
-    this.collectionsSig.set(next);
+    this._collections.set(next);
     localStorage.setItem(COLLECTIONS_KEY, JSON.stringify(next));
   }
 
   deleteCollection(collectionId: string): void {
-    const next = this.collectionsSig().filter(c => c.id !== collectionId);
-    this.collectionsSig.set(next);
+    const next = this._collections().filter(c => c.id !== collectionId);
+    this._collections.set(next);
     localStorage.setItem(COLLECTIONS_KEY, JSON.stringify(next));
   }
 }
