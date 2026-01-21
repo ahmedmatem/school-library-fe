@@ -12,17 +12,19 @@ import { AddToCollectionModalComponent } from '../../shared/add-to-collection-mo
   styleUrl: './catalog.component.css',
 })
 export class CatalogComponent {
-  private rs = inject(ResourceStore);
-  private lib = inject(LibraryStore);
+  rs = inject(ResourceStore);
+  lib = inject(LibraryStore);
 
   @ViewChild(AddToCollectionModalComponent) addModal?: AddToCollectionModalComponent;
 
-  subjects = ['БЕЛ', 'История', 'Биология'];
-  types = [
-    { value: 'FILE' as const, label: 'Файлове' },
-    { value: 'LINK' as const, label: 'Линкове' },
-  ];
-  formats = ['PDF', 'EPUB', 'VIDEO', 'AUDIO', 'DOC', 'PPT', 'OTHER'];
+  subjects = this.rs.subjects;
+  formats = this.rs.formats;
+  types = computed(() =>
+    this.rs.types().map(t => ({
+      value: t,
+      label: t === 'FILE' ? 'Файлове' : 'Линкове'
+    }))
+  );
 
   tags = this.rs.allTags;
   filters = this.rs.filters;
@@ -30,8 +32,8 @@ export class CatalogComponent {
 
   collections = computed(() => this.lib.collections());
 
-  constructor() { 
-    this.rs.ensureLoaded(); 
+  constructor() {
+    this.rs.ensureLoaded();
   }
 
   // handlers
@@ -49,7 +51,7 @@ export class CatalogComponent {
     if (!collectionId) return;
     this.lib.addToCollection(collectionId, resourceId);
   }
-  
+
   openAddToCollection(resourceId: string) {
     this.addModal?.openFor(resourceId);
 
@@ -61,4 +63,9 @@ export class CatalogComponent {
   }
 
   onTag(v: string) { this.rs.setTag(v); }
+
+  hasActiveFilters = computed(() => {
+    const f = this.filters();
+    return !!(f.query || f.tag || f.subject || f.type || f.format);
+  });
 }

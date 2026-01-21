@@ -26,7 +26,7 @@
                     <select class="form-select" [value]="filters().subject"
                         (change)="onSubject($any($event.target).value)">
                         <option value="">Всички</option>
-                        @for (s of subjects; track s) {
+                        @for (s of subjects(); track s) {
                         <option [value]="s">{{ s }}</option>
                         }
                     </select>
@@ -36,7 +36,7 @@
                     <label class="form-label">Тип</label>
                     <select class="form-select" [value]="filters().type" (change)="onType($any($event.target).value)">
                         <option value="">Всички</option>
-                        @for (t of types; track t.value) {
+                        @for (t of types(); track t.value) {
                         <option [value]="t.value">{{ t.label }}</option>
                         }
                     </select>
@@ -47,7 +47,7 @@
                     <select class="form-select" [value]="filters().format"
                         (change)="onFormat($any($event.target).value)">
                         <option value="">Всички</option>
-                        @for (f of formats; track f) {
+                        @for (f of formats(); track f) {
                         <option [value]="f">{{ f }}</option>
                         }
                     </select>
@@ -65,6 +65,44 @@
             <h4 class="mb-0">Каталог</h4>
             <span class="text-muted">{{ resources().length }} резултата</span>
         </div>
+
+        @if (hasActiveFilters()) {
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            @if (filters().query) {
+            <span class="badge text-bg-light border">
+                Търсене: {{ filters().query }}
+                <button class="btn btn-sm p-0 ms-2" type="button" (click)="rs.setQuery('')">×</button>
+            </span>
+            }
+            @if (filters().tag) {
+            <span class="badge text-bg-light border">
+                Таг: {{ filters().tag }}
+                <button class="btn btn-sm p-0 ms-2" type="button" (click)="rs.setTag('')">×</button>
+            </span>
+            }
+            @if (filters().subject) {
+            <span class="badge text-bg-light border">
+                Предмет: {{ filters().subject }}
+                <button class="btn btn-sm p-0 ms-2" type="button" (click)="rs.setSubject('')">×</button>
+            </span>
+            }
+            @if (filters().type) {
+            <span class="badge text-bg-light border">
+                Тип: {{ filters().type === 'FILE' ? 'Файлове' : 'Линкове' }}
+                <button class="btn btn-sm p-0 ms-2" type="button" (click)="rs.setType('')">×</button>
+            </span>
+            }
+            @if (filters().format) {
+            <span class="badge text-bg-light border">
+                Формат: {{ filters().format }}
+                <button class="btn btn-sm p-0 ms-2" type="button" (click)="rs.setFormat('')">×</button>
+            </span>
+            }
+
+            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clear()">Изчисти всички</button>
+        </div>
+        }
+
 
         @if (resources().length === 0) {
         <div class="alert alert-info">Няма резултати по избраните филтри.</div>
