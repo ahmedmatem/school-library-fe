@@ -91,4 +91,17 @@ export class LibraryStore {
     this._collections.set(next);
     localStorage.setItem(COLLECTIONS_KEY, JSON.stringify(next));
   }
+
+  hasInCollection(collectionId: string, resourceId: string): boolean {
+    const c = this._collections().find(x => x.id === collectionId);
+    return !!c && c.resourceIds.includes(resourceId);
+  }
+
+  toggleInCollection(collectionId: string, resourceId: string): void {
+  const c = this._collections().find(x => x.id === collectionId);
+  if (!c) return;
+
+  if (c.resourceIds.includes(resourceId)) this.removeFromCollection(collectionId, resourceId);
+  else this.addToCollection(collectionId, resourceId);
+}
 }
