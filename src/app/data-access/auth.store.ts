@@ -32,6 +32,11 @@ export class AuthStore {
     this.setRole(this.role() === 'TEACHER' ? 'STUDENT' : 'TEACHER');
   }
 
+  setClassCode(code: string) {
+    this.classCode.set(code);
+    localStorage.setItem(CLASS_KEY, code);
+  }
+
   private loadRole(): UserRole {
     const raw = localStorage.getItem(ROLE_KEY);
     return raw === 'TEACHER' ? 'TEACHER' : 'STUDENT';

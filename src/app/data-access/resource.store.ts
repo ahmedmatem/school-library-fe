@@ -1,7 +1,8 @@
-import { Injectable, computed, effect, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Filters, Resource } from './models/resource.model';
 import { ModerationStore } from './moderation.store';
+import { AuthStore } from './auth.store';
 
 const DEFAULT_FILTERS: Filters = {
   query: '',
@@ -11,19 +12,45 @@ const DEFAULT_FILTERS: Filters = {
   tag: '',
 };
 
+function normalizeVisibility(r: Resource): string[] {
+  const v = r.visibility;
+  if (!v || !Array.isArray(v) || v.length === 0) return ['ALL'];
+  return v;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ResourceStore {
+private auth = inject(AuthStore);
+
   private baseResources = signal<Resource[]>([]);
   private loaded = signal(false);
 
-  filters = signal<Filters>({ ...DEFAULT_FILTERS });
-
   private debouncedQuery = signal('');
+
+  filters = signal<Filters>({ ...DEFAULT_FILTERS });
 
   allResources = computed(() => {
     const base = this.baseResources();
     const approved = this.moderation.approved();
     return [...approved, ...base];
+  });
+
+  visibleResources = computed(() => {
+    const list = this.allResources();
+
+    if (this.auth.isTeacher()) return list;
+
+    const classCode = this.auth.classValue(); // e.g. "8A"
+    const grade = this.auth.gradeValue();     // e.g. 8
+    const gradeToken = grade ? String(grade) : '';
+
+    return list.filter(r => {
+      const v = normalizeVisibility(r);
+      if (v.includes('ALL')) return true;
+      if (classCode && v.includes(classCode)) return true;
+      if (gradeToken && v.includes(gradeToken)) return true;
+      return false;
+    });
   });
 
   allTags = computed(() => {
