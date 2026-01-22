@@ -8,6 +8,14 @@
 
         <div id="nav" class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/catalog" routerLinkActive="active">Каталог</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/my" routerLinkActive="active">Моята библиотека</a>
+                </li>
+
                 @if (auth.isTeacher()) {
                 <li class="nav-item">
                     <a class="nav-link" routerLink="/teacher/add" routerLinkActive="active">Добави ресурс</a>
@@ -16,14 +24,17 @@
                     <a class="nav-link" routerLink="/teacher/pending" routerLinkActive="active">Чакащи</a>
                 </li>
                 }
-
-                <li class="nav-item">
-                    <a class="nav-link" routerLink="/catalog" routerLinkActive="active">Каталог</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" routerLink="/my" routerLinkActive="active">Моята библиотека</a>
-                </li>
             </ul>
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-light small">
+                    Роля: <strong>{{ auth.isTeacher() ? 'Учител' : 'Ученик' }}</strong>
+                </span>
+
+                <button class="btn btn-sm btn-outline-light" type="button" (click)="auth.toggleRole()">
+                    Смени роля
+                </button>
+            </div>
         </div>
     </div>
 </nav>
