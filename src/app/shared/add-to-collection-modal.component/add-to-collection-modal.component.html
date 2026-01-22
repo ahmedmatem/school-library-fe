@@ -1,140 +1,88 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">Добави ресурс</h3>
-    <a class="btn btn-outline-secondary" routerLink="/teacher/pending">Към чакащи</a>
-</div>
+<div class="modal fade" id="addToCollectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
 
-@if (!isTeacher()) {
-<div class="alert alert-warning">
-    Само учители могат да добавят ресурси.
-</div>
-} @else {
-<div class="card">
-    <div class="card-body">
-        <div class="row g-3">
-
-            <div class="col-12">
-                <label class="form-label">Заглавие *</label>
-                <input class="form-control" [value]="title()" (input)="title.set($any($event.target).value)" />
+            <div class="modal-header">
+                <h5 class="modal-title">Добави в колекция</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
             </div>
 
-            <div class="col-12 col-md-6">
-                <label class="form-label">Автор</label>
-                <input class="form-control" [value]="author()" (input)="author.set($any($event.target).value)" />
-            </div>
+            <div class="modal-body">
+                @if (resource(); as r) {
+                <div class="mb-3">
+                    <div class="fw-semibold">{{ r.title }}</div>
+                    <div class="small text-muted">{{ r.subject }} • {{ r.format }}</div>
+                </div>
+                } @else {
+                <div class="alert alert-warning mb-3">Няма избран ресурс.</div>
+                }
 
-            <div class="col-12 col-md-6">
-                <label class="form-label">Предмет *</label>
-                <input class="form-control" [value]="subject()" (input)="subject.set($any($event.target).value)"
-                    placeholder="напр. БЕЛ, История" />
-            </div>
+                <!-- NEW: collections list with checkboxes (add/remove instantly) -->
+                <div class="mb-3">
+                    <label class="form-label">Колекции</label>
 
-            <div class="col-12">
-                <label class="form-label">Описание</label>
-                <textarea class="form-control" rows="3" [value]="description()"
-                    (input)="description.set($any($event.target).value)"></textarea>
-            </div>
+                    @if (allowedCollections().length === 0) {
+                    <div class="text-muted">Нямаш налични колекции. Създай нова по-долу.</div>
+                    } @else {
+                    <div class="list-group">
+                        @for (c of allowedCollections(); track c.id) {
+                        <label class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">{{ c.name }}</div>
+                                <div class="small text-muted">
+                                    @if (c.scope === 'SHARED') { Споделена } @else { Лична }
+                                </div>
+                            </div>
 
-            <div class="col-12 col-md-4">
-                <label class="form-label">Тип *</label>
-                <select class="form-select" [value]="type()" (change)="type.set($any($event.target).value)">
-                    <option value="FILE">Файл</option>
-                    <option value="LINK">Линк</option>
-                </select>
-            </div>
-
-            <div class="col-12 col-md-4">
-                <label class="form-label">Формат *</label>
-                <select class="form-select" [value]="format()" (change)="format.set($any($event.target).value)">
-                    @for (f of availableFormats(); track f) {
-                    <option [value]="f">{{ f }}</option>
+                            <input class="form-check-input m-0" type="checkbox"
+                                [checked]="c.resourceIds.includes(resourceId())" (change)="toggleInCollection(c.id)">
+                        </label>
+                        }
+                    </div>
                     }
-                </select>
-            </div>
-
-            <div class="col-12 col-md-4">
-                <label class="form-label">Език</label>
-                <input class="form-control" [value]="language()" (input)="language.set($any($event.target).value)" />
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">Тагове (разделени със запетая)</label>
-                <input class="form-control" [value]="tagsText()" (input)="tagsText.set($any($event.target).value)"
-                    placeholder="напр. възраждане, анализ, 7 клас" />
-            </div>
-
-            <div class="col-12">
-                <label class="form-label">Видимост *</label>
-                <select class="form-select" [value]="visibilityMode()"
-                    (change)="visibilityMode.set($any($event.target).value)">
-                    <option value="ALL">Всички</option>
-                    <option value="GRADE">По клас (напр. 7)</option>
-                    <option value="CLASS">По паралелка (напр. 7A)</option>
-                    <option value="CUSTOM">Персонализирано (списък)</option>
-                </select>
-
-                @if (visibilityMode() === 'GRADE') {
-                <div class="mt-2">
-                    <input class="form-control" [value]="gradeToken()"
-                        (input)="gradeToken.set($any($event.target).value)" placeholder="напр. 7" />
-                    <div class="form-text">Въведи число (5–12).</div>
                 </div>
-                }
 
-                @if (visibilityMode() === 'CLASS') {
-                <div class="mt-2">
-                    <input class="form-control" [value]="classToken()"
-                        (input)="classToken.set($any($event.target).value)" placeholder="напр. 7A" />
-                    <div class="form-text">Въведи паралелка като 7A, 7B и т.н.</div>
-                </div>
-                }
+                <!-- NEW: create new collection inside the modal -->
+                <div class="border rounded p-3">
+                    <div class="fw-semibold mb-2">Нова колекция</div>
 
-                @if (visibilityMode() === 'CUSTOM') {
-                <div class="mt-2">
-                    <input class="form-control" [value]="customVisibility()"
-                        (input)="customVisibility.set($any($event.target).value)" placeholder="напр. ALL,7,7A,8B" />
-                    <div class="form-text">Разделяй със запетая. Позволени токени: ALL, 7, 7A и др.</div>
+                    <div class="input-group">
+                        <input class="form-control" placeholder="Име на колекция" [value]="newCollectionName()"
+                            (input)="newCollectionName.set($any($event.target).value)">
+                        <button class="btn btn-outline-primary" type="button" (click)="createCollection()">
+                            Създай
+                        </button>
+                    </div>
+
+                    <!-- NEW: shared checkbox for teachers -->
+                    @if (auth.isTeacher()) {
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" [checked]="createShared()"
+                            (change)="createShared.set($any($event.target).checked)">
+                        <label class="form-check-label">Споделена колекция</label>
+                    </div>
+                    <div class="form-text">
+                        @if (createShared()) {
+                        Споделените колекции се виждат от всички ученици.
+                        } @else {
+                        Личните колекции се виждат само от теб.
+                        }
+                    </div>
+                    } @else {
+                    <div class="form-text">Личните колекции се виждат само от теб.</div>
+                    }
                 </div>
+
+                @if (message()) {
+                <div class="alert alert-success mt-3 mb-0">{{ message() }}</div>
                 }
             </div>
 
-            @if (type() === 'LINK') {
-            <div class="col-12">
-                <label class="form-label">Външен линк (https://...) *</label>
-                <input class="form-control" [value]="externalUrl()"
-                    (input)="externalUrl.set($any($event.target).value)" />
-                @if (externalUrl() && !isValidUrl()) {
-                <div class="text-danger small mt-1">Невалиден URL.</div>
-                }
+            <!-- NEW: simplified footer (no "Add" button, toggling is instant) -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Готово</button>
             </div>
-            }
-
-            @if (type() === 'FILE') {
-            <div class="col-12">
-                <label class="form-label">Път до файл *</label>
-                <input class="form-control" [value]="fileUrl()" (input)="fileUrl.set($any($event.target).value)"
-                    placeholder="/assets/... или друг публичен път" />
-                <div class="form-text">
-                    За момента използвай публичен път. Реалният upload ще е в backend-а.
-                </div>
-            </div>
-            }
-
-            <div class="col-12 d-flex gap-2">
-                <button class="btn btn-primary" type="button" [disabled]="!canSubmit()" (click)="submit()">
-                    Изпрати за одобрение
-                </button>
-                <button class="btn btn-outline-secondary" type="button" (click)="resetForm()">
-                    Изчисти
-                </button>
-            </div>
-
-            @if (message()) {
-            <div class="col-12">
-                <div class="alert alert-success mb-0">{{ message() }}</div>
-            </div>
-            }
 
         </div>
     </div>
 </div>
-}

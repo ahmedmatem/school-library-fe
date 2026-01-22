@@ -9,6 +9,8 @@ function rid(): string {
   return `r_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+type VisibilityMode = 'ALL' | 'GRADE' | 'CLASS' | 'CUSTOM';
+
 @Component({
   standalone: true,
   imports: [RouterLink],
@@ -35,6 +37,11 @@ export class AddResourceComponent {
   externalUrl = signal('');
   message = signal('');
 
+  visibilityMode = signal<VisibilityMode>('ALL');
+  gradeToken = signal('7');
+  classToken = signal('7A');
+  customVisibility = signal('ALL');
+
   availableFormats = computed(() => {
     const list = this.rs.formats();
     return list.length ? list : (['PDF','EPUB','VIDEO','AUDIO','DOC','PPT','OTHER'] as any);
@@ -53,6 +60,25 @@ export class AddResourceComponent {
     } catch {
       return false;
     }
+  });
+
+  visibilityTokens = computed(() => {
+    const mode = this.visibilityMode();
+    if (mode === 'ALL') return ['ALL'];
+
+    if (mode === 'GRADE') {
+      const g = this.gradeToken().trim();
+      return g ? [g] : ['ALL'];
+    }
+
+    if (mode === 'CLASS') {
+      const c = this.classToken().trim();
+      return c ? [c] : ['ALL'];
+    }
+
+    const raw = this.customVisibility().trim();
+    if (!raw) return ['ALL'];
+    return raw.split(',').map(x => x.trim()).filter(Boolean);
   });
 
   canSubmit = computed(() => {
@@ -88,6 +114,7 @@ export class AddResourceComponent {
       createdAt: new Date().toISOString(),
       fileUrl: this.type() === 'FILE' ? this.fileUrl().trim() : undefined,
       externalUrl: this.type() === 'LINK' ? this.externalUrl().trim() : undefined,
+      visibility: this.visibilityTokens(),
     };
 
     this.moderation.submit(resource);
@@ -107,5 +134,10 @@ export class AddResourceComponent {
     this.fileUrl.set('');
     this.externalUrl.set('');
     this.message.set('');
+
+    this.visibilityMode.set('ALL');
+    this.gradeToken.set('7');
+    this.classToken.set('7A');
+    this.customVisibility.set('ALL');
   }
 }

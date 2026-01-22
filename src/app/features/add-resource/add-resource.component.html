@@ -62,6 +62,41 @@
                     placeholder="напр. възраждане, анализ, 7 клас" />
             </div>
 
+            <div class="col-12">
+                <label class="form-label">Видимост *</label>
+                <select class="form-select" [value]="visibilityMode()"
+                    (change)="visibilityMode.set($any($event.target).value)">
+                    <option value="ALL">Всички</option>
+                    <option value="GRADE">По клас (напр. 7)</option>
+                    <option value="CLASS">По паралелка (напр. 7A)</option>
+                    <option value="CUSTOM">Персонализирано (списък)</option>
+                </select>
+
+                @if (visibilityMode() === 'GRADE') {
+                <div class="mt-2">
+                    <input class="form-control" [value]="gradeToken()"
+                        (input)="gradeToken.set($any($event.target).value)" placeholder="напр. 7" />
+                    <div class="form-text">Въведи число (5–12).</div>
+                </div>
+                }
+
+                @if (visibilityMode() === 'CLASS') {
+                <div class="mt-2">
+                    <input class="form-control" [value]="classToken()"
+                        (input)="classToken.set($any($event.target).value)" placeholder="напр. 7A" />
+                    <div class="form-text">Въведи паралелка като 7A, 7B и т.н.</div>
+                </div>
+                }
+
+                @if (visibilityMode() === 'CUSTOM') {
+                <div class="mt-2">
+                    <input class="form-control" [value]="customVisibility()"
+                        (input)="customVisibility.set($any($event.target).value)" placeholder="напр. ALL,7,7A,8B" />
+                    <div class="form-text">Разделяй със запетая. Позволени токени: ALL, 7, 7A и др.</div>
+                </div>
+                }
+            </div>
+
             @if (type() === 'LINK') {
             <div class="col-12">
                 <label class="form-label">Външен линк (https://...) *</label>
