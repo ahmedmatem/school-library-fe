@@ -80,7 +80,7 @@ private auth = inject(AuthStore);
   });
 
   resources = computed(() => {
-    const list = this.allResources();
+    const list = this.visibleResources();
     const f = this.filters();
     const q = this.debouncedQuery().trim().toLowerCase();
 

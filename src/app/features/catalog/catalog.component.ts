@@ -4,6 +4,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ResourceStore } from '../../data-access/resource.store';
 import { LibraryStore } from '../../data-access/library.store';
 import { AddToCollectionModalComponent } from '../../shared/add-to-collection-modal.component/add-to-collection-modal.component';
+import { AuthStore } from '../../data-access/auth.store';
 
 @Component({
   selector: 'app-catalog',
@@ -12,6 +13,10 @@ import { AddToCollectionModalComponent } from '../../shared/add-to-collection-mo
   styleUrl: './catalog.component.css',
 })
 export class CatalogComponent {
+  private auth = inject(AuthStore);
+
+  isTeacher = this.auth.isTeacher;
+
   rs = inject(ResourceStore);
   lib = inject(LibraryStore);
 

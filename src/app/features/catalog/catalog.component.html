@@ -121,6 +121,17 @@
                             {{ r.author || '—' }} • {{ r.subject }} • {{ r.type === 'FILE' ? 'Файл' : 'Линк' }}
                         </div>
 
+                        @if (isTeacher()) {
+                        <div class="small text-muted mb-2">
+                            Видимост:
+                            @if ((r.visibility?.length ?? 0) === 0 || r.visibility?.includes('ALL')) {
+                            Всички
+                            } @else {
+                            {{ r.visibility?.join(', ') }}
+                            }
+                        </div>
+                        }
+
                         <p class="small" style="min-height: 3rem;">
                             {{ r.description || 'Няма описание.' }}
                         </p>
