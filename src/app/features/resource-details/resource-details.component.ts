@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { ResourceStore } from '../../data-access/resource.store';
 import { LibraryStore } from '../../data-access/library.store';
+import { AuthStore } from '../../data-access/auth.store';
 
 @Component({
   selector: 'app-resource-details',
@@ -13,6 +14,8 @@ import { LibraryStore } from '../../data-access/library.store';
   styleUrl: './resource-details.component.css',
 })
 export class ResourceDetailsComponent {
+  private auth = inject(AuthStore);
+
   private route = inject(ActivatedRoute);
   private rs = inject(ResourceStore);
   private lib = inject(LibraryStore);
@@ -31,6 +34,7 @@ export class ResourceDetailsComponent {
 
   resource = this.resourceComputed;
 
+  isTeacher = this.auth.isTeacher;
   isSaved = computed(() => {
     const id = this.idSig();
     if (!id) return false;

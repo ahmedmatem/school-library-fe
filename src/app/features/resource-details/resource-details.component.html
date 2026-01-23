@@ -5,6 +5,16 @@
         <div class="text-muted">
             {{ r.author || '—' }} • {{ r.subject }} • {{ r.format }} • {{ r.type === 'FILE' ? 'Файл' : 'Линк' }}
         </div>
+        @if (isTeacher()) {
+        <div class="text-muted small mt-1">
+            Видимост:
+            @if ((r.visibility?.length ?? 0) === 0 || r.visibility?.includes('ALL')) {
+            Всички
+            } @else {
+            {{ r.visibility?.join(', ') }}
+            }
+        </div>
+        }
     </div>
 
     <button class="btn" [class.btn-success]="isSaved()" [class.btn-outline-success]="!isSaved()" type="button"
