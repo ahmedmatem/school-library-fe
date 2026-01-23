@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AuthStore } from '../../data-access/auth.store';
-import { ModerationStore } from '../../data-access/moderation.store';
-import { ResourceStore } from '../../data-access/resource.store';
+import { AuthStore } from '../../../data-access/auth.store';
+import { ModerationStore } from '../../../data-access/moderation.store';
+import { ResourceStore } from '../../../data-access/resource.store';
 
 @Component({
   standalone: true,

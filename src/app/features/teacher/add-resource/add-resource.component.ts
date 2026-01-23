@@ -1,9 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AuthStore } from '../../data-access/auth.store';
-import { ResourceType, ResourceFormat, Resource } from '../../data-access/models/resource.model';
-import { ModerationStore } from '../../data-access/moderation.store';
-import { ResourceStore } from '../../data-access/resource.store';
+import { AuthStore } from '../../../data-access/auth.store';
+import { ResourceType, ResourceFormat, Resource } from '../../../data-access/models/resource.model';
+import { ModerationStore } from '../../../data-access/moderation.store';
+import { ResourceStore } from '../../../data-access/resource.store';
 
 function rid(): string {
   return `r_${Math.random().toString(16).slice(2)}_${Date.now()}`;

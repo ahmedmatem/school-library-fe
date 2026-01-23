@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { Resource, ResourceFormat, ResourceType } from '../../data-access/models/resource.model';
-import { AuthStore } from '../../data-access/auth.store';
-import { ModerationStore } from '../../data-access/moderation.store';
+import { Resource, ResourceFormat, ResourceType } from '../../../data-access/models/resource.model';
+import { AuthStore } from '../../../data-access/auth.store';
+import { ModerationStore } from '../../../data-access/moderation.store';
 import { RouterLink } from '@angular/router';
 
 type EditState = {
