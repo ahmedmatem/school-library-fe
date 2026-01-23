@@ -1,10 +1,12 @@
-import { Component, computed, inject, ViewChild } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, computed, effect, inject, signal, ViewChild } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ResourceStore } from '../../data-access/resource.store';
 import { LibraryStore } from '../../data-access/library.store';
 import { AddToCollectionModalComponent } from '../../shared/add-to-collection-modal.component/add-to-collection-modal.component';
 import { AuthStore } from '../../data-access/auth.store';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 
 @Component({
   selector: 'app-catalog',
@@ -14,6 +16,15 @@ import { AuthStore } from '../../data-access/auth.store';
 })
 export class CatalogComponent {
   private auth = inject(AuthStore);
+  private route = inject(ActivatedRoute);
+
+  private denied = toSignal(
+    this.route.queryParamMap.pipe(map(p => p.get('denied'))),
+    { initialValue: null }
+  );
+
+  deniedTeacher = mapDeniedTeacher(this.denied);
+  showDenied = signal(true);
 
   isTeacher = this.auth.isTeacher;
 
@@ -39,6 +50,11 @@ export class CatalogComponent {
 
   constructor() {
     this.rs.ensureLoaded();
+
+    effect(() => {
+      // whenever catalog?denied=teacher appears, show the alert again
+      if (this.deniedTeacher()) this.showDenied.set(true);
+    });
   }
 
   // handlers
@@ -72,5 +88,13 @@ export class CatalogComponent {
   hasActiveFilters = computed(() => {
     const f = this.filters();
     return !!(f.query || f.tag || f.subject || f.type || f.format);
-  });
+  });  
+
+  dismissDenied() {
+    this.showDenied.set(false);
+  }
+}
+
+function mapDeniedTeacher(denied: () => string | null) {
+  return () => denied() === 'teacher';
 }

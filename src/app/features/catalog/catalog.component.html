@@ -1,3 +1,10 @@
+@if (deniedTeacher() && showDenied()) {
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    Нямаш достъп до учителския панел.
+    <button type="button" class="btn-close" aria-label="Close" (click)="dismissDenied()"></button>
+</div>
+}
+
 <div class="row g-4">
     <div class="col-12 col-lg-3">
         <div class="card">

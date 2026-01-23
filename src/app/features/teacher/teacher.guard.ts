@@ -8,5 +8,7 @@ export const teacherGuard: CanActivateFn = () => {
 
     if (auth.isTeacher()) return true;
 
-    return router.parseUrl('/catalog');
+    return router.createUrlTree(['/catalog'], {
+        queryParams: { denied: 'teacher' },
+    });
 };
