@@ -1,0 +1,164 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="mb-0">Управление ресурси</h3>
+        <div class="text-muted small">Редакция и изтриване на одобрени ресурси.</div>
+    </div>
+    <a class="btn btn-outline-primary" routerLink="/teacher/add"><i class="fa-solid fa-plus"></i> Добави ресурс</a>
+</div>
+
+@if (!isTeacher()) {
+<div class="alert alert-warning">Само учители имат достъп.</div>
+} @else {
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-6">
+        <input class="form-control" placeholder="Търсене (заглавие/автор/предмет)" [value]="q()"
+            (input)="q.set($any($event.target).value)">
+    </div>
+    <div class="col-12 col-md-3">
+        <select class="form-select" [value]="typeFilter()" (change)="typeFilter.set($any($event.target).value)">
+            <option value="">Всички типове</option>
+            <option value="FILE">Файл</option>
+            <option value="LINK">Линк</option>
+        </select>
+    </div>
+    <div class="col-12 col-md-3">
+        <select class="form-select" [value]="formatFilter()" (change)="formatFilter.set($any($event.target).value)">
+            <option value="">Всички формати</option>
+            @for (f of formats(); track f) { <option [value]="f">{{ f }}</option> }
+        </select>
+    </div>
+</div>
+
+@if (filtered().length === 0) {
+<div class="alert alert-info">Няма одобрени ресурси по филтрите.</div>
+} @else {
+<div class="list-group">
+    @for (r of filtered(); track r.id) {
+    <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+            <div>
+                <div class="fw-semibold">{{ r.title }}</div>
+                <div class="small text-muted">
+                    {{ r.author || '—' }} • {{ r.subject }} • {{ r.format }} • {{ r.type === 'FILE' ? 'Файл' : 'Линк' }}
+                </div>
+                <div class="small text-muted">
+                    Видимост: {{ (r.visibility?.length ?? 0) === 0 ? 'ALL' : (r.visibility?.join(', ') || 'ALL') }}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary" type="button" (click)="openEdit(r)">
+                    Редактирай
+                </button>
+                <button class="btn btn-sm btn-outline-danger" type="button" (click)="delete(r.id)">
+                    Изтрий
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+}
+
+<!-- Edit modal -->
+<div class="modal fade" id="editApprovedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Редакция на ресурс</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+            </div>
+
+            <div class="modal-body">
+                @if (edit(); as e) {
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Заглавие *</label>
+                        <input class="form-control" [value]="e.title"
+                            (input)="patch('title', $any($event.target).value)">
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Автор</label>
+                        <input class="form-control" [value]="e.author"
+                            (input)="patch('author', $any($event.target).value)">
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Предмет *</label>
+                        <input class="form-control" [value]="e.subject"
+                            (input)="patch('subject', $any($event.target).value)">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Описание</label>
+                        <textarea class="form-control" rows="3"
+                            (input)="patch('description', $any($event.target).value)">{{ e.description }}</textarea>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Тип *</label>
+                        <select class="form-select" [value]="e.type"
+                            (change)="patch('type', $any($event.target).value)">
+                            <option value="FILE">Файл</option>
+                            <option value="LINK">Линк</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Формат *</label>
+                        <select class="form-select" [value]="e.format"
+                            (change)="patch('format', $any($event.target).value)">
+                            @for (f of formats(); track f) { <option [value]="f">{{ f }}</option> }
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Език</label>
+                        <input class="form-control" [value]="e.language"
+                            (input)="patch('language', $any($event.target).value)">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Тагове (запетая)</label>
+                        <input class="form-control" [value]="e.tagsText"
+                            (input)="patch('tagsText', $any($event.target).value)">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Видимост (запетая)</label>
+                        <input class="form-control" [value]="e.visibilityText"
+                            (input)="patch('visibilityText', $any($event.target).value)"
+                            placeholder="ALL,8A,8B или 8 (за целия клас)">
+                    </div>
+
+                    @if (e.type === 'FILE') {
+                    <div class="col-12">
+                        <label class="form-label">fileUrl *</label>
+                        <input class="form-control" [value]="e.fileUrl"
+                            (input)="patch('fileUrl', $any($event.target).value)">
+                    </div>
+                    } @else {
+                    <div class="col-12">
+                        <label class="form-label">externalUrl *</label>
+                        <input class="form-control" [value]="e.externalUrl"
+                            (input)="patch('externalUrl', $any($event.target).value)">
+                    </div>
+                    }
+                </div>
+                } @else {
+                <div class="text-muted">Няма избран ресурс.</div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Отказ</button>
+                <button class="btn btn-primary" type="button" (click)="save()">Запази</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+}

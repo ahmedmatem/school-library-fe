@@ -73,4 +73,20 @@ export class ModerationStore {
     localStorage.removeItem(PENDING_KEY);
     localStorage.removeItem(APPROVED_KEY);
   }
+
+  updateApproved(id: string, patch: Partial<Resource>) {
+    const next = this._approved().map(r => r.id === id ? ({ ...r, ...patch }) : r);
+    this._approved.set(next);
+    localStorage.setItem(APPROVED_KEY, JSON.stringify(next));
+  }
+
+  deleteApproved(id: string) {
+    const next = this._approved().filter(r => r.id !== id);
+    this._approved.set(next);
+    localStorage.setItem(APPROVED_KEY, JSON.stringify(next));
+  }
+
+  getApprovedById(id: string) {
+    return computed(() => this._approved().find(r => r.id === id));
+  }
 }
