@@ -139,13 +139,40 @@
                             (input)="patch('tagsText', $any($event.target).value)">
                     </div>
 
+                    <!-- visibility -->
                     <div class="col-12">
-                        <label class="form-label">Видимост (запетая)</label>
-                        <input class="form-control" [value]="e.visibilityText"
-                            (input)="patch('visibilityText', $any($event.target).value)"
-                            placeholder="ALL,8A,8B или 8 (за целия клас)">
-                        <div class="form-text">Остави празно за ALL.</div>
+                        <label class="form-label">Видимост *</label>
+
+                        <select class="form-select mb-2" [value]="visMode()"
+                            (change)="visMode.set($any($event.target).value); syncVisibilityText()">
+                            <option value="ALL">Всички</option>
+                            <option value="GRADE">По клас</option>
+                            <option value="CLASS">По паралелка</option>
+                        </select>
+
+                        @if (visMode() === 'GRADE') {
+                        <select class="form-select" [value]="visGrade()"
+                            (change)="visGrade.set($any($event.target).value); syncVisibilityText()">
+                            @for (g of grades; track g) {
+                            <option [value]="g">{{ g }}</option>
+                            }
+                        </select>
+                        }
+
+                        @if (visMode() === 'CLASS') {
+                        <select class="form-select" [value]="visClass()"
+                            (change)="visClass.set($any($event.target).value); syncVisibilityText()">
+                            @for (c of allClasses; track c) {
+                            <option [value]="c">{{ c }}</option>
+                            }
+                        </select>
+                        }
+
+                        <div class="form-text">
+                            Този избор ще се запише като: <span class="fw-semibold">{{ e.visibilityText }}</span>
+                        </div>
                     </div>
+
 
                     @if (e.type === 'FILE') {
                     <div class="col-12">

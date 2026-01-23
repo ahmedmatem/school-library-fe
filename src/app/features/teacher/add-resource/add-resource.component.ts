@@ -4,10 +4,33 @@ import { AuthStore } from '../../../data-access/auth.store';
 import { ResourceType, ResourceFormat, Resource } from '../../../data-access/models/resource.model';
 import { ModerationStore } from '../../../data-access/moderation.store';
 import { ResourceStore } from '../../../data-access/resource.store';
+import { GRADES, ALL_CLASSES } from '../../../data-access/visibility-picker.util';
 
 function rid(): string {
   return `r_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
+
+const LAT_TO_CYR: Record<string, string> = {
+  'A': 'А',
+  'B': 'Б',
+  'V': 'В',
+  'G': 'Г',
+};
+
+function normalizeVisibilityToken(token: string): string {
+  let t = (token ?? '').trim();
+  if (!t) return '';
+
+  t = t.replace(/\s+/g, '').toUpperCase();
+
+  if (t === 'ВСИЧКИ' || t === 'ВСИ') return 'ALL';
+
+  // ако е 8A / 9V / 10B и т.н. -> направи буквата кирилица
+  t = t.replace(/(\d{1,2})([ABVG])$/, (_, g, l) => `${g}${LAT_TO_CYR[l] ?? l}`);
+
+  return t;
+}
+
 
 type VisibilityMode = 'ALL' | 'GRADE' | 'CLASS' | 'CUSTOM';
 
@@ -22,6 +45,10 @@ export class AddResourceComponent {
   private moderation = inject(ModerationStore);
   private router = inject(Router);
   private rs = inject(ResourceStore);
+
+  grades = GRADES;
+  allClasses = ALL_CLASSES;
+
 
   isTeacher = this.auth.isTeacher;
 
@@ -39,12 +66,12 @@ export class AddResourceComponent {
 
   visibilityMode = signal<VisibilityMode>('ALL');
   gradeToken = signal('7');
-  classToken = signal('7A');
+  classToken = signal('7А');
   customVisibility = signal('ALL');
 
   availableFormats = computed(() => {
     const list = this.rs.formats();
-    return list.length ? list : (['PDF','EPUB','VIDEO','AUDIO','DOC','PPT','OTHER'] as any);
+    return list.length ? list : (['PDF', 'EPUB', 'VIDEO', 'AUDIO', 'DOC', 'PPT', 'OTHER'] as any);
   });
 
   constructor() {
@@ -78,7 +105,12 @@ export class AddResourceComponent {
 
     const raw = this.customVisibility().trim();
     if (!raw) return ['ALL'];
-    return raw.split(',').map(x => x.trim()).filter(Boolean);
+    const tokens = raw
+      .split(',')
+      .map(x => normalizeVisibilityToken(x))
+      .filter(Boolean);
+
+    return tokens.length ? tokens : ['ALL'];
   });
 
   canSubmit = computed(() => {

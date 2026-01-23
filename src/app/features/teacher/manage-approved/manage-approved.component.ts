@@ -3,6 +3,7 @@ import { Resource, ResourceFormat, ResourceType } from '../../../data-access/mod
 import { AuthStore } from '../../../data-access/auth.store';
 import { ModerationStore } from '../../../data-access/moderation.store';
 import { RouterLink } from '@angular/router';
+import { GRADES, ALL_CLASSES } from '../../../data-access/visibility-picker.util';
 
 type EditState = {
   id: string;
@@ -40,6 +41,9 @@ export class ManageApprovedComponent {
   private auth = inject(AuthStore);
   private moderation = inject(ModerationStore);
 
+  grades = GRADES;
+  allClasses = ALL_CLASSES;
+
   isTeacher = this.auth.isTeacher;
 
   q = signal('');
@@ -47,6 +51,11 @@ export class ManageApprovedComponent {
   formatFilter = signal<string>('');
 
   approved = this.moderation.approved;
+
+  // visibility
+  visMode = signal<'ALL' | 'GRADE' | 'CLASS'>('ALL');
+  visGrade = signal('8');
+  visClass = signal('8А');
 
   toast = signal<string>('');
 
@@ -99,6 +108,23 @@ export class ManageApprovedComponent {
     this.editOriginal.set({ ...state });
     this.formError.set('');
 
+    const v = (r.visibility && r.visibility.length ? r.visibility : ['ALL'])[0];
+
+    if (v === 'ALL') {
+      this.visMode.set('ALL');
+    } else if (/^\d{1,2}$/.test(v)) {
+      this.visMode.set('GRADE');
+      this.visGrade.set(v);
+    } else if (/^\d{1,2}[АБВГ]$/.test(v)) {
+      this.visMode.set('CLASS');
+      this.visClass.set(v);
+    } else {
+      // fallback: keep as ALL
+      this.visMode.set('ALL');
+    }
+
+    this.patch('visibilityText', v === 'ALL' ? 'ALL' : v);
+
     const el = document.getElementById('editApprovedModal');
     const bs = (window as any).bootstrap;
     bs?.Modal?.getOrCreateInstance(el).show();
@@ -108,6 +134,23 @@ export class ManageApprovedComponent {
     this.edit.update(e => e ? ({ ...e, [key]: value }) : e);
     this.formError.set('');
   }
+
+  syncVisibilityText() {
+    const mode = this.visMode();
+
+    if (mode === 'ALL') {
+      this.patch('visibilityText', 'ALL');
+      return;
+    }
+
+    if (mode === 'GRADE') {
+      this.patch('visibilityText', this.visGrade());
+      return;
+    }
+
+    this.patch('visibilityText', this.visClass());
+  }
+
 
   canSave = computed(() => {
     const e = this.edit();
