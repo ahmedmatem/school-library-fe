@@ -1,6 +1,23 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Чакащи ресурси</h4>
-    <a class="btn btn-outline-primary" routerLink="../add">+ Добави ресурс</a>
+    <div class="d-flex align-items-center gap-2">
+        <h4 class="mb-0">Чакащи ресурси</h4>
+        <span class="badge text-bg-secondary">{{ pending().length }}</span>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-success" type="button" [disabled]="pending().length === 0"
+            (click)="approveAll()">
+            <i class="fa-regular fa-thumbs-up"></i>
+            Одобри всички
+        </button>
+
+        <button class="btn btn-outline-danger" type="button" [disabled]="pending().length === 0" (click)="rejectAll()">
+            <i class="fa-regular fa-thumbs-down"></i>
+            Отхвърли всички
+        </button>
+
+        <a class="btn btn-outline-primary" routerLink="../add"><i class="fa-solid fa-plus"></i> Добави ресурс</a>
+    </div>
 </div>
 
 @if (!isTeacher()) {
@@ -10,7 +27,7 @@
 <div class="alert alert-info">Няма чакащи ресурси.</div>
 } @else {
 <div class="list-group">
-    @for (p of pending(); track p.pendingId) {
+    @for (p of sortedPending(); track p.pendingId) {
     <div class="list-group-item">
         <div class="d-flex justify-content-between align-items-start gap-3">
             <div>
@@ -26,6 +43,7 @@
             </div>
 
             <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary" [routerLink]="['/resources', p.resource.id]">Отвори</a>
                 <button class="btn btn-sm btn-success" type="button" (click)="approve(p.pendingId)">Одобри</button>
                 <button class="btn btn-sm btn-outline-danger" type="button"
                     (click)="reject(p.pendingId)">Отхвърли</button>

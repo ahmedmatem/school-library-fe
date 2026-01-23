@@ -19,6 +19,17 @@ type EditState = {
   visibilityText: string; // comma-separated
 };
 
+function isValidHttpUrl(value: string): boolean {
+  const v = (value ?? '').trim();
+  if (!v) return false;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 @Component({
   selector: 'app-manage-approved',
   imports: [RouterLink],
@@ -36,6 +47,8 @@ export class ManageApprovedComponent {
   formatFilter = signal<string>('');
 
   approved = this.moderation.approved;
+
+  toast = signal<string>('');
 
   formats = computed(() => {
     const set = new Set<string>();
@@ -60,9 +73,14 @@ export class ManageApprovedComponent {
   });
 
   edit = signal<EditState | null>(null);
+  private editOriginal = signal<EditState | null>(null);
+
+  formError = signal<string>('');
+
+  isValidHttpUrl = isValidHttpUrl;
 
   openEdit(r: Resource) {
-    const e: EditState = {
+    const state: EditState = {
       id: r.id,
       title: r.title ?? '',
       author: r.author ?? '',
@@ -76,7 +94,10 @@ export class ManageApprovedComponent {
       externalUrl: r.externalUrl ?? '',
       visibilityText: (r.visibility && r.visibility.length ? r.visibility : ['ALL']).join(', '),
     };
-    this.edit.set(e);
+
+    this.edit.set(state);
+    this.editOriginal.set({ ...state });
+    this.formError.set('');
 
     const el = document.getElementById('editApprovedModal');
     const bs = (window as any).bootstrap;
@@ -85,30 +106,38 @@ export class ManageApprovedComponent {
 
   patch<K extends keyof EditState>(key: K, value: EditState[K]) {
     this.edit.update(e => e ? ({ ...e, [key]: value }) : e);
+    this.formError.set('');
   }
+
+  canSave = computed(() => {
+    const e = this.edit();
+    if (!e) return false;
+
+    const title = e.title.trim();
+    const subject = e.subject.trim();
+    if (!title || !subject) return false;
+
+    if (e.type === 'FILE') return !!e.fileUrl.trim();
+    if (e.type === 'LINK') return isValidHttpUrl(e.externalUrl);
+    return false;
+  });
 
   save() {
     const e = this.edit();
     if (!e) return;
 
-    const title = e.title.trim();
-    const subject = e.subject.trim();
-    if (!title || !subject) return;
+    if (!this.canSave()) {
+      this.formError.set('Моля попълни задължителните полета.');
+      return;
+    }
 
-    const tags = (e.tagsText ?? '')
-      .split(',')
-      .map(x => x.trim())
-      .filter(Boolean);
-
-    const visibility = (e.visibilityText ?? '')
-      .split(',')
-      .map(x => x.trim())
-      .filter(Boolean);
+    const tags = (e.tagsText ?? '').split(',').map(x => x.trim()).filter(Boolean);
+    const visibility = (e.visibilityText ?? '').split(',').map(x => x.trim()).filter(Boolean);
 
     const patch: Partial<Resource> = {
-      title,
+      title: e.title.trim(),
       author: e.author.trim() || undefined,
-      subject,
+      subject: e.subject.trim(),
       description: e.description.trim() || undefined,
       type: e.type,
       format: e.format,
@@ -126,11 +155,24 @@ export class ManageApprovedComponent {
     bs?.Modal?.getOrCreateInstance(el).hide();
 
     this.edit.set(null);
+    this.editOriginal.set(null);
+    this.formError.set('');
+
+    this.toast.set('Запазено.');
+    setTimeout(() => this.toast.set(''), 1500);
+  }
+
+  cancelEdit() {
+    const original = this.editOriginal();
+    this.edit.set(original ? { ...original } : null);
+    this.formError.set('');
   }
 
   delete(id: string) {
-    const ok = confirm('Сигурен ли си, че искаш да изтриеш този ресурс?');
-    if (!ok) return;
+    if (!confirm('Сигурен ли си, че искаш да изтриеш този ресурс?')) return;
     this.moderation.deleteApproved(id);
+
+    this.toast.set('Ресурсът е изтрит.');
+    setTimeout(() => this.toast.set(''), 1500);
   }
 }

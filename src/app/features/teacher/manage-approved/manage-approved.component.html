@@ -1,11 +1,18 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">Одобрени ресурси</h4>
-    <a class="btn btn-outline-primary" routerLink="../add">+ Добави ресурс</a>
+    <a class="btn btn-outline-primary" routerLink="../add"><i class="fa-solid fa-plus"></i> Добави ресурс</a>
 </div>
 
 @if (!isTeacher()) {
 <div class="alert alert-warning">Само учители имат достъп.</div>
 } @else {
+
+@if (toast()) {
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ toast() }}
+    <button type="button" class="btn-close" aria-label="Close" (click)="toast.set('')"></button>
+</div>
+}
 
 <div class="row g-3 mb-3">
     <div class="col-12 col-md-6">
@@ -37,10 +44,12 @@
             <div>
                 <div class="fw-semibold">{{ r.title }}</div>
                 <div class="small text-muted">
-                    {{ r.author || '—' }} • {{ r.subject }} • {{ r.format }} • {{ r.type === 'FILE' ? 'Файл' : 'Линк' }}
+                    {{ r.author || '—' }} • {{ r.subject }} • {{ r.format }} •
+                    {{ r.type === 'FILE' ? 'Файл' : 'Линк' }}
                 </div>
                 <div class="small text-muted">
-                    Видимост: {{ (r.visibility?.length ?? 0) === 0 ? 'ALL' : (r.visibility?.join(', ') || 'ALL') }}
+                    Видимост:
+                    {{ (r.visibility?.length ?? 0) === 0 ? 'ALL' : (r.visibility?.join(', ') || 'ALL') }}
                 </div>
             </div>
 
@@ -58,17 +67,24 @@
 </div>
 }
 
+<!-- EDIT MODAL -->
 <div class="modal fade" id="editApprovedModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
 
             <div class="modal-header">
                 <h5 class="modal-title">Редакция на ресурс</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"
+                    (click)="cancelEdit()"></button>
             </div>
 
             <div class="modal-body">
                 @if (edit(); as e) {
+
+                @if (formError()) {
+                <div class="alert alert-danger mb-3">{{ formError() }}</div>
+                }
+
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label">Заглавие *</label>
@@ -128,6 +144,7 @@
                         <input class="form-control" [value]="e.visibilityText"
                             (input)="patch('visibilityText', $any($event.target).value)"
                             placeholder="ALL,8A,8B или 8 (за целия клас)">
+                        <div class="form-text">Остави празно за ALL.</div>
                     </div>
 
                     @if (e.type === 'FILE') {
@@ -141,6 +158,9 @@
                         <label class="form-label">externalUrl *</label>
                         <input class="form-control" [value]="e.externalUrl"
                             (input)="patch('externalUrl', $any($event.target).value)">
+                        @if (e.externalUrl && !isValidHttpUrl(e.externalUrl)) {
+                        <div class="text-danger small mt-1">Невалиден URL (http/https).</div>
+                        }
                     </div>
                     }
                 </div>
@@ -150,8 +170,12 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Отказ</button>
-                <button class="btn btn-primary" type="button" (click)="save()">Запази</button>
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal" (click)="cancelEdit()">
+                    Отказ
+                </button>
+                <button class="btn btn-primary" type="button" [disabled]="!canSave()" (click)="save()">
+                    Запази
+                </button>
             </div>
 
         </div>
