@@ -36,6 +36,8 @@ export class ModerationStore {
   pending = computed(() => this._pending());
   approved = computed(() => this._approved());
 
+  constructor() { this.refresh(); }
+
   async refresh() {
     const p = await this.moderationService.getPending();
     const a = await this.moderationService.getApproved();
@@ -43,38 +45,19 @@ export class ModerationStore {
     this._approved.set(a);
   }
 
-  submit(resource: Resource) {
-    const p: PendingResource = {
-      pendingId: uid('pend'),
-      resource,
-      submittedAt: new Date().toISOString(),
-    };
-
-    const next = [p, ...this._pending()];
-    this._pending.set(next);
-    localStorage.setItem(PENDING_KEY, JSON.stringify(next));
+  async submit(resource: Resource) {
+    await this.moderationService.submitPending(resource);
+    await this.refresh();
   }
 
-  approve(pendingId: string) {
-    const list = this._pending();
-    const item = list.find(x => x.pendingId === pendingId);
-    if (!item) return;
-
-    // remove from pending
-    const pendingNext = list.filter(x => x.pendingId !== pendingId);
-    this._pending.set(pendingNext);
-    localStorage.setItem(PENDING_KEY, JSON.stringify(pendingNext));
-
-    // add to approved (prepend)
-    const approvedNext = [item.resource, ...this._approved()];
-    this._approved.set(approvedNext);
-    localStorage.setItem(APPROVED_KEY, JSON.stringify(approvedNext));
+  async approve(pendingId: string) {
+    await this.moderationService.approve(pendingId);
+    await this.refresh();
   }
 
-  reject(pendingId: string) {
-    const pendingNext = this._pending().filter(x => x.pendingId !== pendingId);
-    this._pending.set(pendingNext);
-    localStorage.setItem(PENDING_KEY, JSON.stringify(pendingNext));
+  async reject(pendingId: string) {
+    await this.moderationService.reject(pendingId);
+    await this.refresh();
   }
 
   clearAll() {
@@ -84,16 +67,14 @@ export class ModerationStore {
     localStorage.removeItem(APPROVED_KEY);
   }
 
-  updateApproved(id: string, patch: Partial<Resource>) {
-    const next = this._approved().map(r => r.id === id ? ({ ...r, ...patch }) : r);
-    this._approved.set(next);
-    localStorage.setItem(APPROVED_KEY, JSON.stringify(next));
+  async updateApproved(id: string, patch: Partial<Resource>) {
+    await this.moderationService.updateApproved(id, patch);
+    await this.refresh();
   }
 
-  deleteApproved(id: string) {
-    const next = this._approved().filter(r => r.id !== id);
-    this._approved.set(next);
-    localStorage.setItem(APPROVED_KEY, JSON.stringify(next));
+  async deleteApproved(id: string) {
+    await this.moderationService.deleteApproved(id);
+    await this.refresh();
   }
 
   getApprovedById(id: string) {
