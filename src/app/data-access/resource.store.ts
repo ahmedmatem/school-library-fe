@@ -4,6 +4,7 @@ import { ModerationStore } from './moderation.store';
 import { AuthStore } from './auth.store';
 import { ResourceService } from './services/resource.service';
 import { firstValueFrom } from 'rxjs';
+import { ModerationService } from './services/moderation.service';
 
 const DEFAULT_FILTERS: Filters = {
   query: '',
@@ -21,6 +22,7 @@ function normalizeVisibility(r: Resource): string[] {
 
 @Injectable({ providedIn: 'root' })
 export class ResourceStore {
+  private moderationService = inject(ModerationService);
   private resourceService = inject(ResourceService);
   private auth = inject(AuthStore);
 
@@ -37,7 +39,18 @@ export class ResourceStore {
     });
   }
 
-  filters = signal<Filters>({ ...DEFAULT_FILTERS });
+  filters = signal<Filters>({ ...DEFAULT_FILTERS });  
+
+  async ensureLoaded() {
+    if (this.loaded()) return;
+
+    const list = await firstValueFrom(this.resourceService.getAll());
+    await this.moderationService.seedApprovedIfEmpty(list);
+    await this.moderation.refresh(); // so approved signal updates
+
+    this.baseResources.set(list);
+    this.loaded.set(true);
+  }
 
   allResources = computed(() => {
     const base = this.baseResources();
@@ -106,14 +119,6 @@ export class ResourceStore {
       return true;
     });
   });
-
-  async ensureLoaded() {
-    if (this.loaded()) return;
-
-    const list = await firstValueFrom(this.resourceService.getAll());
-    this.baseResources.set(list);
-    this.loaded.set(true);
-  }
 
   setQuery(query: string) { this.filters.update(f => ({ ...f, query })); }
   setSubject(subject: string) { this.filters.update(f => ({ ...f, subject })); }
