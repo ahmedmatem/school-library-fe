@@ -1,5 +1,6 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { Resource } from './models/resource.model';
+import { ModerationService } from './services/moderation.service';
 
 export interface PendingResource {
   pendingId: string;
@@ -22,6 +23,8 @@ function uid(prefix = 'p'): string {
   providedIn: 'root',
 })
 export class ModerationStore {
+  private moderationService = inject(ModerationService);
+
   private _pending = signal<PendingResource[]>(
     safeParse<PendingResource[]>(localStorage.getItem(PENDING_KEY), [])
   );
@@ -32,6 +35,13 @@ export class ModerationStore {
 
   pending = computed(() => this._pending());
   approved = computed(() => this._approved());
+
+  async refresh() {
+    const p = await this.moderationService.getPending();
+    const a = await this.moderationService.getApproved();
+    this._pending.set(p);
+    this._approved.set(a);
+  }
 
   submit(resource: Resource) {
     const p: PendingResource = {
