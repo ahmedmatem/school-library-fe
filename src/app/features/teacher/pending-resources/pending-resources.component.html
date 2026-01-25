@@ -5,13 +5,14 @@
     </div>
 
     <div class="d-flex gap-2">
-        <button class="btn btn-outline-success" type="button" [disabled]="pending().length === 0"
-            (click)="approveAll()">
+        <button class="btn btn-outline-success" [disabled]="busy() || pending().length === 0" type="button"
+            [disabled]="pending().length === 0" (click)="approveAll()">
             <i class="fa-regular fa-thumbs-up"></i>
             Одобри всички
         </button>
 
-        <button class="btn btn-outline-danger" type="button" [disabled]="pending().length === 0" (click)="rejectAll()">
+        <button class="btn btn-outline-danger" [disabled]="busy() || pending().length === 0" type="button"
+            [disabled]="pending().length === 0" (click)="rejectAll()">
             <i class="fa-regular fa-thumbs-down"></i>
             Отхвърли всички
         </button>
@@ -44,9 +45,10 @@
 
             <div class="d-flex gap-2">
                 <a class="btn btn-sm btn-outline-primary" [routerLink]="['/resources', p.resource.id]">Отвори</a>
-                <button class="btn btn-sm btn-success" type="button" (click)="approve(p.pendingId)">Одобри</button>
-                <button class="btn btn-sm btn-outline-danger" type="button"
-                    (click)="reject(p.pendingId)">Отхвърли</button>
+                <button class="btn btn-sm btn-success" [disabled]="busy() || pending().length === 0" type="button"
+                    (click)="approve(p.pendingId)">Одобри</button>
+                <button class="btn btn-sm btn-outline-danger" [disabled]="busy() || pending().length === 0"
+                    type="button" (click)="reject(p.pendingId)">Отхвърли</button>
             </div>
         </div>
     </div>

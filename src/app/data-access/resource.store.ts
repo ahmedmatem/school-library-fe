@@ -26,7 +26,6 @@ export class ResourceStore {
   private resourceService = inject(ResourceService);
   private auth = inject(AuthStore);
 
-  private baseResources = signal<Resource[]>([]);
   private loaded = signal(false);
 
   private debouncedQuery = signal('');
@@ -39,24 +38,23 @@ export class ResourceStore {
     });
   }
 
-  filters = signal<Filters>({ ...DEFAULT_FILTERS });  
+  filters = signal<Filters>({ ...DEFAULT_FILTERS });
 
   async ensureLoaded() {
     if (this.loaded()) return;
 
-    const list = await firstValueFrom(this.resourceService.getAll());
-    await this.moderationService.seedApprovedIfEmpty(list);
-    await this.moderation.refresh(); // so approved signal updates
+    // Always sync approved/pending from storage/service first
+    await this.moderation.refresh();
 
-    this.baseResources.set(list);
+    const list = await firstValueFrom(this.resourceService.getAll());
+
+    // Seed approved once (only if empty)
+    await this.moderation.seedApprovedIfEmpty(list);
+
     this.loaded.set(true);
   }
 
-  allResources = computed(() => {
-    const base = this.baseResources();
-    const approved = this.moderation.approved();
-    return [...approved, ...base];
-  });
+  allResources = computed(() => this.moderation.approved());
 
   visibleResources = computed(() => {
     const list = this.allResources();

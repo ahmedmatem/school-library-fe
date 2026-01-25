@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthStore } from '../../../data-access/auth.store';
 import { ModerationStore } from '../../../data-access/moderation.store';
@@ -17,6 +17,7 @@ export class PendingResourcesComponent {
 
   isTeacher = this.auth.isTeacher;
   pending = this.moderation.pending;
+  busy = signal(false);
 
   sortedPending = computed(() => {
     return [...this.pending()].sort((a, b) => {
@@ -33,11 +34,14 @@ export class PendingResourcesComponent {
   approve(pendingId: string) {
     this.moderation.approve(pendingId);
   }
-  
-  approveAll() {
+
+  async approveAll() {
     if (!confirm('Да одобря ли всички чакащи ресурси?')) return;
-    for (const p of this.sortedPending()) {
-      this.moderation.approve(p.pendingId);
+    this.busy.set(true);
+    try {
+      for (const p of this.sortedPending()) await this.moderation.approve(p.pendingId);
+    } finally {
+      this.busy.set(false);
     }
   }
 

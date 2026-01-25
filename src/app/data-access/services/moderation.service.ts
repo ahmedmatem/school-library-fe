@@ -21,11 +21,13 @@ function safeParse<T>(raw: string | null, fallback: T): T {
 
 @Injectable({ providedIn: 'root' })
 export class ModerationService {
-    
-    async seedApprovedIfEmpty(seed: Resource[]) {
+
+    async seedApprovedIfEmpty(seed: Resource[]): Promise<boolean> {
         const approved = await this.getApproved();
-        if (approved.length > 0) return;
-        localStorage.setItem('sl_approved_resources_v1', JSON.stringify(seed));
+        if (approved.length > 0) return false;
+
+        localStorage.setItem(APPROVED_KEY, JSON.stringify(seed));
+        return true;
     }
 
     async getApproved(): Promise<Resource[]> {

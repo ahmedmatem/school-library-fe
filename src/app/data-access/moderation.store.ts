@@ -38,6 +38,11 @@ export class ModerationStore {
 
   constructor() { this.refresh(); }
 
+  async seedApprovedIfEmpty(seed: Resource[]) {
+    const didSeed = await this.moderationService.seedApprovedIfEmpty(seed);
+    if (didSeed) await this.refresh();
+  }
+
   async refresh() {
     const p = await this.moderationService.getPending();
     const a = await this.moderationService.getApproved();
