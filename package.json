@@ -28,6 +28,8 @@
     "@angular/forms": "^20.3.0",
     "@angular/platform-browser": "^20.3.0",
     "@angular/router": "^20.3.0",
+    "@azure/msal-angular": "^5.0.2",
+    "@azure/msal-browser": "^5.0.2",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
