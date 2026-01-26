@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from "@angular/router";
 import { AuthStore } from '../../data-access/auth.store';
+import { MsalService } from '@azure/msal-angular';
 
 @Component({
   selector: 'app-layout',
@@ -9,7 +10,7 @@ import { AuthStore } from '../../data-access/auth.store';
   styleUrl: './layout.component.css',
 })
 export class LayoutComponent {
-  auth = inject(AuthStore);
+  auth = inject(AuthStore);  
 
   classOptions = [
     '5','6', '7',
@@ -19,4 +20,21 @@ export class LayoutComponent {
     '11А','11Б','11В','11Г',
     '12А','12Б','12В','12Г',
   ];
+
+  private msal: MsalService = inject(MsalService);
+
+  isLoggedIn = computed(() => this.msal.instance.getAllAccounts().length > 0);
+
+  displayName = computed(() => {
+    const acc = this.msal.instance.getAllAccounts()[0];
+    return acc?.name ?? acc?.username ?? '';
+  });
+
+  login() {
+    this.msal.loginRedirect();
+  }
+
+  logout() {
+    this.msal.logoutRedirect();
+  }
 }
