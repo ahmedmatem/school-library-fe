@@ -1,7 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink, RouterOutlet } from "@angular/router";
 import { AuthStore } from '../../data-access/auth.store';
 import { MsalService } from '@azure/msal-angular';
+import { MeDto, MeService } from '../../data-access/services/me.service';
 
 @Component({
   selector: 'app-layout',
@@ -22,19 +23,34 @@ export class LayoutComponent {
   ];
 
   private msal: MsalService = inject(MsalService);
+  private meApi = inject(MeService);
 
   isLoggedIn = computed(() => this.msal.instance.getAllAccounts().length > 0);
+
+  me = signal<MeDto | null>(null);
+  meError = signal<string>('');
+
+  constructor() {
+    // when logged in, load /api/me once
+    effect(() => {
+      if (!this.isLoggedIn()) {
+        this.me.set(null);
+        this.meError.set('');
+        return;
+      }
+
+      this.meApi.getMe().subscribe({
+        next: (x) => this.me.set(x),
+        error: (err) => this.meError.set('Cannot load /api/me (check API url, CORS, token).'),
+      });
+    });
+  }
+
+  login() { this.msal.loginRedirect(); }
+  logout() { this.msal.logoutRedirect(); }
 
   displayName = computed(() => {
     const acc = this.msal.instance.getAllAccounts()[0];
     return acc?.name ?? acc?.username ?? '';
   });
-
-  login() {
-    this.msal.loginRedirect();
-  }
-
-  logout() {
-    this.msal.logoutRedirect();
-  }
 }
