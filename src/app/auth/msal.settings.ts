@@ -1,9 +1,9 @@
 export const MSAL_SETTINGS = {
-  tenantSubdomain: 'ahmedmatemgmail',
-  tenantId: 'd4c9d6c8-b3a9-4008-8930-6b940d7a5946',
-  spaClientId: '92fb72b8-3e70-46ac-9815-a1713ed287cf',
+  tenantSubdomain: 'ppmgacadnobreshkov',
+  tenantId: '1af51696-3983-4b6e-a112-7a386c808edf',
+  spaClientId: 'a7fc82a0-9614-4fd1-a231-31d5e6bd2b12',
 
-  apiScope: 'api://fa06ed6b-79d4-4c9f-8531-ef2799640ad9/access_as_user',
+  apiScope: 'api://ffeae3a1-b0bb-4089-8634-b338c3fecb8a/access_as_user',
 
   apiBaseUrl: 'https://localhost:7193/api',
 

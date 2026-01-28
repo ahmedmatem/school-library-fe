@@ -19,7 +19,7 @@ export function msalInstanceFactory(): IPublicClientApplication {
     auth: {
       clientId: MSAL_SETTINGS.spaClientId,
       authority: MSAL_AUTHORITY,
-      // knownAuthorities: MSAL_KNOWN_AUTHORITIES,
+      knownAuthorities: MSAL_KNOWN_AUTHORITIES,
       redirectUri: MSAL_SETTINGS.redirectUri,
       postLogoutRedirectUri: MSAL_SETTINGS.postLogoutRedirectUri,
     },
@@ -39,8 +39,14 @@ export function msalGuardConfigFactory(): MsalGuardConfiguration {
 }
 
 export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
+  const map = new Map<string, string[]>();
+
+  // Protect all API calls
+  map.set(MSAL_SETTINGS.apiBaseUrl, [MSAL_SETTINGS.apiScope]);
+
   return {
     interactionType: InteractionType.Redirect,
-    protectedResourceMap: new Map<string, string[]>(),
-  };
+    protectedResourceMap: map,
+  };  // Result: any Angular HttpClient call to https://localhost:7001/api/... 
+      // will include Authorization: Bearer <token>.
 }
