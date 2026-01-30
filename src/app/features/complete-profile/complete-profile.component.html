@@ -1,1 +1,20 @@
-<p>complete-profile works!</p>
+<div class="card p-3" style="max-width: 420px;">
+    <h3 class="mb-2">Довърши профила си</h3>
+    <p class="text-muted small mb-3">
+      Избери клас/паралелка. Това е нужно, за да виждаш правилните материали.
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <label class="form-label">Клас (5–12)</label>
+      <input type="number" class="form-control" formControlName="grade" />
+
+      <label class="form-label mt-2">Паралелка (пример: 8А)</label>
+      <input class="form-control" formControlName="classCode" />
+
+      <div class="text-danger small mt-2" *ngIf="error">{{ error }}</div>
+
+      <button class="btn btn-primary mt-3" [disabled]="form.invalid || saving">
+        {{ saving ? 'Запис...' : 'Запази' }}
+      </button>
+    </form>
+  </div>
