@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { EventMessage, EventType, AuthenticationResult } from '@azure/msal-browser';
@@ -33,6 +33,7 @@ export class LayoutComponent implements OnInit {
   email = signal<string>('');
 
   me = signal<MeDto | null>(null);
+  meName = computed(() => this.auth.me()?.displayName === 'unknown' ? this.email() : this.auth.me()?.displayName ?? 'Гост');
   meError = signal<string | null>(null);
 
   ngOnInit() {
@@ -61,7 +62,9 @@ export class LayoutComponent implements OnInit {
 
     this.isLoggedIn.set(!!active);
     this.displayName.set(active?.name ?? active?.username ?? '');
+
     this.email.set(this.getEmailFromIdToken() ?? '');
+    this.auth.setIdTokenEmail(this.email());
   }
 
   login() { this.msal.loginRedirect(); }

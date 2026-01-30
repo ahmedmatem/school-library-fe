@@ -13,8 +13,9 @@ export interface MeDto {
 }
 
 export interface CompleteProfileReq {
-  grade: number;
-  classCode: string;
+  fullName: string;
+  grade?: number | null;
+  classCode?: string | null;
 }
 
 @Injectable({

@@ -3,7 +3,8 @@ import {
   importProvidersFrom,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
-  APP_INITIALIZER
+  provideAppInitializer,
+  inject
 } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 
@@ -29,13 +30,17 @@ import { MeService } from './data-access/services/me.service';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from './data-access/auth.store';
 
-export function msalInitializer(msal: MsalService) {
+export function appInitializer(
+  msal: MsalService,
+  meService: MeService,
+  auth: AuthStore,
+  router: Router
+) {
+  // msal Initializer
   return async () => {
     await msal.instance.initialize();
 
-    // process redirect result (after loginRedirect)
     const result = await msal.instance.handleRedirectPromise().catch(() => null);
-
     if (result?.account) {
       msal.instance.setActiveAccount(result.account);
     } else {
@@ -44,24 +49,14 @@ export function msalInitializer(msal: MsalService) {
         msal.instance.setActiveAccount(accounts[0]);
       }
     }
-  };
-}
 
-export function meInitializer(
-  msal: MsalService,
-  meService: MeService,
-  auth: AuthStore,
-  router: Router
-) {
-  return async () => {
-    const account = msal.instance.getActiveAccount()
-      ?? msal.instance.getAllAccounts()[0];
-
+    const account = msal.instance.getActiveAccount() ?? msal.instance.getAllAccounts()[0];
     if (!account) {
-      auth.clear(); // me = null
+      auth.clear();
       return;
     }
 
+    // me Initializer
     try {
       const dto = await firstValueFrom(meService.getMe());
       auth.setMe(dto);
@@ -70,7 +65,7 @@ export function meInitializer(
         await router.navigateByUrl('/complete-profile');
       }
     } catch {
-      // ignore for now (API offline, etc.)
+      // ignore for now
     }
   };
 }
@@ -89,8 +84,11 @@ export const appConfig: ApplicationConfig = {
     MsalService,
     MsalGuard,
     MsalBroadcastService,
-
-    { provide: APP_INITIALIZER, useFactory: msalInitializer, deps: [MsalService], multi: true },
-    { provide: APP_INITIALIZER, useFactory: meInitializer, deps: [MsalService, MeService, AuthStore, Router], multi: true },
+    provideAppInitializer(() => appInitializer(
+      inject(MsalService),
+      inject(MeService),
+      inject(AuthStore),
+      inject(Router)
+    )())
   ]
 };

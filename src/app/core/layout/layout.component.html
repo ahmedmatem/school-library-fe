@@ -27,7 +27,7 @@
             <div class="d-flex align-items-center gap-2">
 
                 @if (isLoggedIn()) {
-                <span class="small me-2 text-white">Здравей, {{ displayName() }}, {{ email() }}</span>
+                <span class="small me-2 text-white">Здравей, {{ meName() === '' ? 'Гост' : meName() }}</span>
                 <button class="btn btn-outline-secondary" type="button" (click)="logout()">Изход</button>
                 } @else {
                 <button class="btn btn-outline-primary" type="button" (click)="login()">Вход</button>

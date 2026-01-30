@@ -14,6 +14,8 @@ function extractGrade(classCode: string): number | null {
 export class AuthStore {
   me = signal<MeDto | null>(null);
 
+  idTokenEmail = signal<string | null>(null);
+
   role = computed<UserRole>(() => this.me()?.role as UserRole ?? 'Student');
   isTeacher = computed(() => this.role() === 'Teacher');
   isStudent = computed(() => this.role() === 'Student');
@@ -24,11 +26,14 @@ export class AuthStore {
 
   profileComplete = computed(() => !!this.me()?.grade && !!this.me()?.classCode);
 
-  setMe(dto: MeDto) {
-    this.me.set(dto);
+  setMe(dto: MeDto) { 
+    dto.email = this.idTokenEmail() ?? '';
+    this.me.set(dto); 
   }
+  setIdTokenEmail(email: string | null) { this.idTokenEmail.set(email); }
 
   clear() {
     this.me.set(null);
+    this.idTokenEmail.set(null);
   }
 }
