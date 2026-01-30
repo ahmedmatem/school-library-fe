@@ -1,10 +1,11 @@
-import { 
+import {
   ApplicationConfig,
-  importProvidersFrom, 
-  provideBrowserGlobalErrorListeners, 
+  importProvidersFrom,
+  provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
-APP_INITIALIZER } from '@angular/core';
-import { provideRouter } from '@angular/router';
+  APP_INITIALIZER
+} from '@angular/core';
+import { provideRouter, Router } from '@angular/router';
 
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
@@ -24,6 +25,9 @@ import {
   msalGuardConfigFactory,
   msalInterceptorConfigFactory
 } from './auth/msal.factories';
+import { MeService } from './data-access/services/me.service';
+import { firstValueFrom } from 'rxjs';
+import { AuthStore } from './data-access/auth.store';
 
 export function msalInitializer(msal: MsalService) {
   return async () => {
@@ -39,6 +43,34 @@ export function msalInitializer(msal: MsalService) {
       if (!msal.instance.getActiveAccount() && accounts.length) {
         msal.instance.setActiveAccount(accounts[0]);
       }
+    }
+  };
+}
+
+export function meInitializer(
+  msal: MsalService,
+  meService: MeService,
+  auth: AuthStore,
+  router: Router
+) {
+  return async () => {
+    const account = msal.instance.getActiveAccount()
+      ?? msal.instance.getAllAccounts()[0];
+
+    if (!account) {
+      auth.clear(); // me = null
+      return;
+    }
+
+    try {
+      const dto = await firstValueFrom(meService.getMe());
+      auth.setMe(dto);
+
+      if (dto.role === 'Student' && (!dto.grade || !dto.classCode)) {
+        await router.navigateByUrl('/complete-profile');
+      }
+    } catch {
+      // ignore for now (API offline, etc.)
     }
   };
 }
@@ -59,5 +91,6 @@ export const appConfig: ApplicationConfig = {
     MsalBroadcastService,
 
     { provide: APP_INITIALIZER, useFactory: msalInitializer, deps: [MsalService], multi: true },
+    { provide: APP_INITIALIZER, useFactory: meInitializer, deps: [MsalService, MeService, AuthStore, Router], multi: true },
   ]
 };
