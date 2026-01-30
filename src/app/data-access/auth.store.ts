@@ -1,9 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { MeDto } from './services/me.service';
 
-export type UserRole = 'STUDENT' | 'TEACHER';
-
-const ROLE_KEY = 'sl_role_v1';
-const CLASS_KEY = 'sl_class_v1';
+export type UserRole = 'Student' | 'Teacher' | 'Admin';
 
 function extractGrade(classCode: string): number | null {
   const m = classCode.trim().match(/^(\d{1,2})/);
@@ -14,35 +12,23 @@ function extractGrade(classCode: string): number | null {
 
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
-  private classCode = signal<string>(this.loadClassCode()); // e.g. "8A"
+  me = signal<MeDto | null>(null);
 
-  role = signal<UserRole>(this.loadRole());
-  isTeacher = computed(() => this.role() === 'TEACHER');
-  isStudent = computed(() => this.role() === 'STUDENT');
+  role = computed<UserRole>(() => this.me()?.role as UserRole ?? 'Student');
+  isTeacher = computed(() => this.role() === 'Teacher');
+  isStudent = computed(() => this.role() === 'Student');
+  isAdmin = computed(() => this.role() === 'Admin');
 
-  classValue = computed(() => this.classCode());                  // "8A"
-  gradeValue = computed(() => extractGrade(this.classCode()));    // 8
+  classValue = computed(() => this.me()?.classCode ?? null);                  // "8A"
+  gradeValue = computed(() => this.me()?.grade ?? null);                      // 8
 
-  setRole(role: UserRole) {
-    this.role.set(role);
-    localStorage.setItem(ROLE_KEY, role);
+  profileComplete = computed(() => !!this.me()?.grade && !!this.me()?.classCode);
+
+  setMe(dto: MeDto) {
+    this.me.set(dto);
   }
 
-  toggleRole() {
-    this.setRole(this.role() === 'TEACHER' ? 'STUDENT' : 'TEACHER');
-  }
-
-  setClassCode(code: string) {
-    this.classCode.set(code);
-    localStorage.setItem(CLASS_KEY, code);
-  }
-
-  private loadRole(): UserRole {
-    const raw = localStorage.getItem(ROLE_KEY);
-    return raw === 'TEACHER' ? 'TEACHER' : 'STUDENT';
-  }
-
-  private loadClassCode(): string {
-    return localStorage.getItem(CLASS_KEY) ?? '8A';
+  clear() {
+    this.me.set(null);
   }
 }

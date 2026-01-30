@@ -1,4 +1,9 @@
-import { ApplicationConfig, importProvidersFrom, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { 
+  ApplicationConfig,
+  importProvidersFrom, 
+  provideBrowserGlobalErrorListeners, 
+  provideZoneChangeDetection,
+APP_INITIALIZER } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
@@ -20,6 +25,23 @@ import {
   msalInterceptorConfigFactory
 } from './auth/msal.factories';
 
+export function msalInitializer(msal: MsalService) {
+  return async () => {
+    await msal.instance.initialize();
+
+    // process redirect result (after loginRedirect)
+    const result = await msal.instance.handleRedirectPromise().catch(() => null);
+
+    if (result?.account) {
+      msal.instance.setActiveAccount(result.account);
+    } else {
+      const accounts = msal.instance.getAllAccounts();
+      if (!msal.instance.getActiveAccount() && accounts.length) {
+        msal.instance.setActiveAccount(accounts[0]);
+      }
+    }
+  };
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -35,5 +57,7 @@ export const appConfig: ApplicationConfig = {
     MsalService,
     MsalGuard,
     MsalBroadcastService,
+
+    { provide: APP_INITIALIZER, useFactory: msalInitializer, deps: [MsalService], multi: true },
   ]
 };
