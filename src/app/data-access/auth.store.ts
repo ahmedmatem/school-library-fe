@@ -3,32 +3,33 @@ import { MeDto } from './services/me.service';
 
 export type UserRole = 'Student' | 'Teacher' | 'Admin';
 
-function extractGrade(classCode: string): number | null {
-  const m = classCode.trim().match(/^(\d{1,2})/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  return Number.isFinite(n) ? n : null;
-}
-
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   me = signal<MeDto | null>(null);
 
   idTokenEmail = signal<string | null>(null);
 
-  role = computed<UserRole>(() => this.me()?.role as UserRole ?? 'Student');
-  isTeacher = computed(() => this.role() === 'Teacher');
+  role = computed<UserRole>(() => {
+    const r = this.me()?.role;
+    return (r === 'Admin' || r === 'Teacher' || r === 'Student') ? r : 'Student';
+  });
   isStudent = computed(() => this.role() === 'Student');
+  isTeacher = computed(() => this.role() === 'Teacher');
   isAdmin = computed(() => this.role() === 'Admin');
+  isStaff = computed(() => this.isTeacher() || this.isAdmin());
 
   classValue = computed(() => this.me()?.classCode ?? null);                  // "8A"
   gradeValue = computed(() => this.me()?.grade ?? null);                      // 8
 
-  profileComplete = computed(() => !!this.me()?.grade && !!this.me()?.classCode);
+  profileComplete = computed(() => this.me()?.grade != null && !!this.me()?.classCode);
 
-  setMe(dto: MeDto) { 
-    dto.email = this.idTokenEmail() ?? '';
-    this.me.set(dto); 
+  setMe(dto: MeDto) {
+    const tokenEmail = this.idTokenEmail();
+    this.me.set({
+      ...dto,
+      // Use API email if it exists; otherwise fallback to ID token email
+      email: (dto.email && dto.email.trim()) ? dto.email : (tokenEmail ?? '')
+    });
   }
   setIdTokenEmail(email: string | null) { this.idTokenEmail.set(email); }
 

@@ -16,7 +16,8 @@
                     <a class="nav-link" routerLink="/my" routerLinkActive="active">Моята библиотека</a>
                 </li>
 
-                @if (auth.isTeacher()) {
+                <!-- teacher or admin -->
+                @if (auth.isStaff()) {
                 <li class="nav-item">
                     <a class="nav-link" routerLink="/teacher" routerLinkActive="active">Учител</a>
                 </li>
