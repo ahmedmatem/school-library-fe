@@ -1,56 +1,99 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink, RouterOutlet } from "@angular/router";
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
+import { EventMessage, EventType, AuthenticationResult } from '@azure/msal-browser';
+import { filter } from 'rxjs/operators';
 import { AuthStore } from '../../data-access/auth.store';
-import { MsalService } from '@azure/msal-angular';
 import { MeDto, MeService } from '../../data-access/services/me.service';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink],
+  standalone: true,
+  imports: [RouterLink, RouterOutlet],
   templateUrl: './layout.component.html',
-  styleUrl: './layout.component.css',
 })
-export class LayoutComponent {
-  auth = inject(AuthStore);  
+export class LayoutComponent implements OnInit {
+  auth = inject(AuthStore);
 
   classOptions = [
-    '5','6', '7',
-    '8А','8Б','8В','8Г',
-    '9А','9Б','9В','9Г',
-    '10А','10Б','10В','10Г',
-    '11А','11Б','11В','11Г',
-    '12А','12Б','12В','12Г',
+    '5', '6', '7',
+    '8А', '8Б', '8В', '8Г',
+    '9А', '9Б', '9В', '9Г',
+    '10А', '10Б', '10В', '10Г',
+    '11А', '11Б', '11В', '11Г',
+    '12А', '12Б', '12В', '12Г',
   ];
 
-  private msal: MsalService = inject(MsalService);
-  private meApi = inject(MeService);
+  private msal = inject(MsalService);
+  private msalBroadcast = inject(MsalBroadcastService);
+  private meService = inject(MeService);
 
-  isLoggedIn = computed(() => this.msal.instance.getAllAccounts().length > 0);
+  isLoggedIn = signal(false);
+  displayName = signal('');
+  email = signal<string>('');
 
   me = signal<MeDto | null>(null);
-  meError = signal<string>('');
+  meName = computed(() => this.auth.me()?.displayName === 'unknown' ? this.email() : this.auth.me()?.displayName ?? 'Гост');
+  meError = signal<string | null>(null);
 
-  constructor() {
-    // when logged in, load /api/me once
-    effect(() => {
-      if (!this.isLoggedIn()) {
-        this.me.set(null);
-        this.meError.set('');
-        return;
-      }
+  ngOnInit() {
+    this.refreshAccountState();
 
-      this.meApi.getMe().subscribe({
-        next: (x) => this.me.set(x),
-        error: (err) => this.meError.set('Cannot load /api/me (check API url, CORS, token).'),
+    this.msalBroadcast.msalSubject$
+      .pipe(filter((msg: EventMessage) =>
+        msg.eventType === EventType.LOGIN_SUCCESS ||
+        msg.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
+        msg.eventType === EventType.LOGOUT_SUCCESS
+      ))
+      .subscribe((msg) => {
+        if (msg.eventType === EventType.LOGIN_SUCCESS && msg.payload) {
+          const res = msg.payload as AuthenticationResult;
+          this.msal.instance.setActiveAccount(res.account);
+        }
+        this.refreshAccountState();
       });
-    });
+  }
+
+  private refreshAccountState() {
+    const accounts = this.msal.instance.getAllAccounts();
+    const active = this.msal.instance.getActiveAccount() ?? accounts[0] ?? null;
+
+    if (active) this.msal.instance.setActiveAccount(active);
+
+    this.isLoggedIn.set(!!active);
+    this.displayName.set(active?.name ?? active?.username ?? '');
+
+    this.email.set(this.getEmailFromIdToken() ?? '');
+    this.auth.setIdTokenEmail(this.email());
   }
 
   login() { this.msal.loginRedirect(); }
   logout() { this.msal.logoutRedirect(); }
 
-  displayName = computed(() => {
-    const acc = this.msal.instance.getAllAccounts()[0];
-    return acc?.name ?? acc?.username ?? '';
-  });
+  getEmailFromIdToken(): string | null {
+    const account = this.msal.instance.getActiveAccount()
+      ?? this.msal.instance.getAllAccounts()[0];
+
+    if (!account) return null;
+
+    const claims: any = account.idTokenClaims;
+
+    // Common possibilities
+    return claims?.email
+      ?? claims?.preferred_username
+      ?? claims?.upn
+      ?? (Array.isArray(claims?.emails) ? claims.emails[0] : null)
+      ?? null;
+  }
+
+  // 👇 add this
+  callMe() {
+    this.meError.set(null);
+    this.me.set(null);
+
+    this.meService.getMe().subscribe({
+      next: (dto) => this.me.set(dto),
+      error: (err) => this.meError.set(err?.message ?? JSON.stringify(err)),
+    });
+  }
 }

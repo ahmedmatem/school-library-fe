@@ -7,7 +7,17 @@ import { ResourceStore } from '../../../data-access/resource.store';
 import { GRADES, ALL_CLASSES } from '../../../data-access/visibility-picker.util';
 
 function rid(): string {
-  return `r_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+  // modern browsers
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID(); // valid GUID
+  }
+
+  // fallback (simple RFC4122-ish v4)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : ((r & 0x3) | 0x8);
+    return v.toString(16);
+  });
 }
 
 const LAT_TO_CYR: Record<string, string> = {

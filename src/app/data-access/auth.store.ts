@@ -1,48 +1,40 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { MeDto } from './services/me.service';
 
-export type UserRole = 'STUDENT' | 'TEACHER';
-
-const ROLE_KEY = 'sl_role_v1';
-const CLASS_KEY = 'sl_class_v1';
-
-function extractGrade(classCode: string): number | null {
-  const m = classCode.trim().match(/^(\d{1,2})/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  return Number.isFinite(n) ? n : null;
-}
+export type UserRole = 'Student' | 'Teacher' | 'Admin';
 
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
-  private classCode = signal<string>(this.loadClassCode()); // e.g. "8A"
+  me = signal<MeDto | null>(null);
 
-  role = signal<UserRole>(this.loadRole());
-  isTeacher = computed(() => this.role() === 'TEACHER');
-  isStudent = computed(() => this.role() === 'STUDENT');
+  idTokenEmail = signal<string | null>(null);
 
-  classValue = computed(() => this.classCode());                  // "8A"
-  gradeValue = computed(() => extractGrade(this.classCode()));    // 8
+  role = computed<UserRole>(() => {
+    const r = this.me()?.role;
+    return (r === 'Admin' || r === 'Teacher' || r === 'Student') ? r : 'Student';
+  });
+  isStudent = computed(() => this.role() === 'Student');
+  isTeacher = computed(() => this.role() === 'Teacher');
+  isAdmin = computed(() => this.role() === 'Admin');
+  isStaff = computed(() => this.isTeacher() || this.isAdmin());
 
-  setRole(role: UserRole) {
-    this.role.set(role);
-    localStorage.setItem(ROLE_KEY, role);
+  classValue = computed(() => this.me()?.classCode ?? null);                  // "8A"
+  gradeValue = computed(() => this.me()?.grade ?? null);                      // 8
+
+  profileComplete = computed(() => this.me()?.grade != null && !!this.me()?.classCode);
+
+  setMe(dto: MeDto) {
+    const tokenEmail = this.idTokenEmail();
+    this.me.set({
+      ...dto,
+      // Use API email if it exists; otherwise fallback to ID token email
+      email: (dto.email && dto.email.trim()) ? dto.email : (tokenEmail ?? '')
+    });
   }
+  setIdTokenEmail(email: string | null) { this.idTokenEmail.set(email); }
 
-  toggleRole() {
-    this.setRole(this.role() === 'TEACHER' ? 'STUDENT' : 'TEACHER');
-  }
-
-  setClassCode(code: string) {
-    this.classCode.set(code);
-    localStorage.setItem(CLASS_KEY, code);
-  }
-
-  private loadRole(): UserRole {
-    const raw = localStorage.getItem(ROLE_KEY);
-    return raw === 'TEACHER' ? 'TEACHER' : 'STUDENT';
-  }
-
-  private loadClassCode(): string {
-    return localStorage.getItem(CLASS_KEY) ?? '8A';
+  clear() {
+    this.me.set(null);
+    this.idTokenEmail.set(null);
   }
 }

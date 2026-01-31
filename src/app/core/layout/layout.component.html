@@ -1,7 +1,3 @@
-@if (me()) {
-<span class="badge text-bg-light border me-2">{{ me()!.role }}</span>
-}
-
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" routerLink="/">Училищна библиотека</a>
@@ -20,9 +16,16 @@
                     <a class="nav-link" routerLink="/my" routerLinkActive="active">Моята библиотека</a>
                 </li>
 
-                @if (auth.isTeacher()) {
+                <!-- teacher or admin -->
+                @if (auth.isStaff()) {
                 <li class="nav-item">
                     <a class="nav-link" routerLink="/teacher" routerLinkActive="active">Учител</a>
+                </li>
+                }
+
+                @if (auth.isAdmin()) {
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/admin/users">Админ</a>
                 </li>
                 }
             </ul>
@@ -31,13 +34,14 @@
             <div class="d-flex align-items-center gap-2">
 
                 @if (isLoggedIn()) {
-                <span class="text-muted small me-2">Здравей, {{ displayName() }}</span>
+                <span class="small me-2 text-white">Здравей, {{ meName() === '' ? 'Гост' : meName() }}</span>
                 <button class="btn btn-outline-secondary" type="button" (click)="logout()">Изход</button>
                 } @else {
                 <button class="btn btn-outline-primary" type="button" (click)="login()">Вход</button>
                 }
 
-                @if (auth.isStudent()) {
+
+                <!-- @if (auth.isStudent()) {
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-light small">Паралелка:</span>
                     <select class="form-select form-select-sm" style="width: 90px;" [value]="auth.classValue()"
@@ -47,20 +51,23 @@
                         }
                     </select>
                 </div>
-                }
+                } -->
 
-                <span class="text-light small">
+                <!-- <span class="text-light small">
                     Роля: <strong>{{ auth.isTeacher() ? 'Учител' : 'Ученик' }}</strong>
                 </span>
 
                 <button class="btn btn-sm btn-outline-light" type="button" (click)="auth.toggleRole()">
                     Смени роля
-                </button>
+                </button> -->
             </div>
         </div>
     </div>
 </nav>
 
 <main class="container py-3">
+    <button class="btn btn-sm btn-secondary mb-3" type="button" (click)="callMe()">
+        Call Me
+    </button>
     <router-outlet></router-outlet>
 </main>
