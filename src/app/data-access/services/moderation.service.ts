@@ -1,77 +1,45 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Resource } from '../models/resource.model';
 import { PendingResource } from '../moderation.store';
-
-export type PendingItem = {
-    pendingId: string;
-    resource: Resource;
-    submittedAt: string;
-};
-
-const APPROVED_KEY = 'sl_approved_resources_v1';
-const PENDING_KEY = 'sl_pending_resources_v1';
-
-function safeParse<T>(raw: string | null, fallback: T): T {
-    try {
-        return raw ? (JSON.parse(raw) as T) : fallback;
-    } catch {
-        return fallback;
-    }
-}
+import { HttpClient } from '@angular/common/http';
+import { MSAL_SETTINGS } from '../../auth/msal.settings';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ModerationService {
+    private http = inject(HttpClient);
+    private base = `${MSAL_SETTINGS.apiBaseUrl}/resources`;
 
-    async seedApprovedIfEmpty(seed: Resource[]): Promise<boolean> {
-        const approved = await this.getApproved();
-        if (approved.length > 0) return false;
-
-        localStorage.setItem(APPROVED_KEY, JSON.stringify(seed));
-        return true;
+    // no more seeding from mock
+    async seedApprovedIfEmpty(_: Resource[]): Promise<boolean> {
+        return false;
     }
 
     async getApproved(): Promise<Resource[]> {
-        return safeParse<Resource[]>(localStorage.getItem(APPROVED_KEY), []);
+        return await firstValueFrom(this.http.get<Resource[]>(`${this.base}`));
     }
 
     async getPending(): Promise<PendingResource[]> {
-        return safeParse<PendingResource[]>(localStorage.getItem(PENDING_KEY), []);
+        return await firstValueFrom(this.http.get<PendingResource[]>(`${this.base}/pending`));
     }
 
     async submitPending(resource: Resource): Promise<void> {
-        const pending = await this.getPending();
-        const item: PendingResource = {
-            pendingId: `p_${Math.random().toString(16).slice(2)}_${Date.now()}`,
-            resource,
-            submittedAt: new Date().toISOString(),
-        };
-        localStorage.setItem(PENDING_KEY, JSON.stringify([item, ...pending]));
+        await firstValueFrom(this.http.post<void>(`${this.base}/pending`, resource));
     }
 
     async approve(pendingId: string): Promise<void> {
-        const pending = await this.getPending();
-        const approved = await this.getApproved();
-
-        const item = pending.find(x => x.pendingId === pendingId);
-        if (!item) return;
-
-        localStorage.setItem(PENDING_KEY, JSON.stringify(pending.filter(x => x.pendingId !== pendingId)));
-        localStorage.setItem(APPROVED_KEY, JSON.stringify([item.resource, ...approved]));
+        await firstValueFrom(this.http.post<void>(`${this.base}/pending/${pendingId}/approve`, {}));
     }
 
     async reject(pendingId: string): Promise<void> {
-        const pending = await this.getPending();
-        localStorage.setItem(PENDING_KEY, JSON.stringify(pending.filter(x => x.pendingId !== pendingId)));
+        await firstValueFrom(this.http.delete<void>(`${this.base}/pending/${pendingId}`));
     }
 
     async updateApproved(id: string, patch: Partial<Resource>): Promise<void> {
-        const approved = await this.getApproved();
-        const next = approved.map(r => (r.id === id ? { ...r, ...patch } : r));
-        localStorage.setItem(APPROVED_KEY, JSON.stringify(next));
+        await firstValueFrom(this.http.patch<void>(`${this.base}/${id}`, patch));
     }
 
     async deleteApproved(id: string): Promise<void> {
-        const approved = await this.getApproved();
-        localStorage.setItem(APPROVED_KEY, JSON.stringify(approved.filter(r => r.id !== id)));
+        await firstValueFrom(this.http.delete<void>(`${this.base}/${id}`));
     }
 }

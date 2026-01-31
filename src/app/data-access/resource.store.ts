@@ -46,7 +46,7 @@ export class ResourceStore {
     // Always sync approved/pending from storage/service first
     await this.moderation.refresh();
 
-    const list = await firstValueFrom(this.resourceService.getAll());
+    const list = await firstValueFrom(this.resourceService.getApproved());
 
     // Seed approved once (only if empty)
     await this.moderation.seedApprovedIfEmpty(list);
