@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { MSAL_SETTINGS } from '../../auth/msal.settings';
+import { Observable } from 'rxjs';
 
 export type UserRole = 'Student' | 'Teacher' | 'Admin';
 
@@ -23,7 +24,7 @@ export class AdminUsersService {
   private http = inject(HttpClient);
   private baseUrl = `${MSAL_SETTINGS.apiBaseUrl}/admin/users`;
 
-  getAll(q?: string) {
+  getAll(q?: string) : Observable<AdminUserDto[]> {
     let params = new HttpParams();
     if (q) { params = params.set('q', q); }
     return this.http.get<AdminUserDto[]>(this.baseUrl, { params });

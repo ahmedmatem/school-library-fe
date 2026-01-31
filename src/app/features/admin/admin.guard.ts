@@ -6,7 +6,7 @@ export const adminGuard: CanActivateFn = () => {
     const auth = inject(AuthStore);
     const router = inject(Router);
 
-    if((auth as any).isAdmin?.()) return true; // in case already added isAdmin computed
+    if((auth as any).isAdmin?.()) return true;
     if((auth as any).role?.() === 'Admin') return true;
 
     return router.createUrlTree(['/catalog'], { queryParams: { denied: 'admin' } });
