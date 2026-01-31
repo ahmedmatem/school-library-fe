@@ -21,6 +21,12 @@
                     <a class="nav-link" routerLink="/teacher" routerLinkActive="active">Учител</a>
                 </li>
                 }
+
+                @if (auth.role() === 'Admin') {
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/admin/users">Админ</a>
+                </li>
+                }
             </ul>
 
 
