@@ -2,9 +2,6 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Filters, Resource } from './models/resource.model';
 import { ModerationStore } from './moderation.store';
 import { AuthStore } from './auth.store';
-import { ResourceService } from './services/resource.service';
-import { firstValueFrom } from 'rxjs';
-import { ModerationService } from './services/moderation.service';
 
 const DEFAULT_FILTERS: Filters = {
   query: '',
@@ -22,8 +19,6 @@ function normalizeVisibility(r: Resource): string[] {
 
 @Injectable({ providedIn: 'root' })
 export class ResourceStore {
-  private moderationService = inject(ModerationService);
-  private resourceService = inject(ResourceService);
   private auth = inject(AuthStore);
 
   private loaded = signal(false);
@@ -46,11 +41,7 @@ export class ResourceStore {
     // Always sync approved/pending from storage/service first
     await this.moderation.refresh();
 
-    const list = await firstValueFrom(this.resourceService.getApproved());
-
-    // Seed approved once (only if empty)
-    await this.moderation.seedApprovedIfEmpty(list);
-
+    // Approved resources now come from API via moderation.refresh()
     this.loaded.set(true);
   }
 
