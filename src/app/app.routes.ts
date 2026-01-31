@@ -10,7 +10,7 @@ export const routes: Routes = [
     { path: 'catalog', component: CatalogComponent },
     { path: 'resources/:id', component: ResourceDetailsComponent },
     { path: 'my', component: MyLibraryComponent },
-    { path: 'admin', component: AdminUsersComponent },
+    { path: 'admin/users', component: AdminUsersComponent },
     {
         path: 'teacher',
         loadChildren: () => import('./features/teacher/teacher.routes').then(m => m.TEACHER_ROUTES)
