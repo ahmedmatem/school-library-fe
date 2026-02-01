@@ -1,4 +1,6 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { AuthStore } from './auth.store';
+import { SavedResourcesApiService } from './services/saved-resources-api';
 
 export type CollectionScope = 'PRIVATE' | 'SHARED';
 
@@ -22,9 +24,45 @@ function uid(prefix = 'c'): string {
 
 @Injectable({ providedIn: 'root' })
 export class LibraryStore {
-  private _savedIds = signal<Set<string>>(new Set<string>(
-    safeParse<string[]>(localStorage.getItem(SAVED_KEY), [])
-  ));
+  private auth = inject(AuthStore);
+  private api = inject(SavedResourcesApiService);
+
+  private _savedIds = signal<Set<string>>(new Set<string>());
+  savedIds = computed(() => this._savedIds());
+
+  // call after login (e.g. in Layout once you successfully setMe)
+  async refreshSavedFromApi(): Promise<void> {
+    if (!this.auth.me()) return; // not logged
+    const list = await this.api.getMine();
+    this._savedIds.set(new Set(list.map(x => x.id)));
+  }
+
+  async toggleSaved(id: string): Promise<void> {
+    const next = new Set(this._savedIds());
+
+    const isLogged = !!this.auth.me();
+    const already = next.has(id);
+
+    // optimistic UI
+    if (already) next.delete(id);
+    else next.add(id);
+    this._savedIds.set(next);
+
+    // persist if logged in, otherwise you can keep localStorage if you want
+    if (!isLogged) return;
+
+    try {
+      if (already) await this.api.unsave(id);
+      else await this.api.save(id);
+    } catch {
+      // rollback on failure
+      const rollback = new Set(this._savedIds());
+      if (already) rollback.add(id);
+      else rollback.delete(id);
+      this._savedIds.set(rollback);
+      throw new Error('Failed to update saved resources.');
+    }
+  }
 
   private _collections = signal<Collection[]>(
     safeParse<any[]>(localStorage.getItem(COLLECTIONS_KEY), []).map(c => ({
@@ -36,7 +74,6 @@ export class LibraryStore {
     }))
   );
 
-  savedIds = computed(() => this._savedIds());
   collections = computed(() => this._collections());
   privateCollections = computed(() => this._collections().filter(c => c.scope === 'PRIVATE'));
   sharedCollections = computed(() => this._collections().filter(c => c.scope === 'SHARED'));
@@ -44,15 +81,6 @@ export class LibraryStore {
 
   isSaved(id: string) {
     return computed(() => this._savedIds().has(id));
-  }
-
-  toggleSaved(id: string): void {
-    const next = new Set(this._savedIds());
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-
-    this._savedIds.set(next);
-    localStorage.setItem(SAVED_KEY, JSON.stringify(Array.from(next)));
   }
 
   createCollection(name: string, scope: CollectionScope = 'PRIVATE'): void {
@@ -98,10 +126,10 @@ export class LibraryStore {
   }
 
   toggleInCollection(collectionId: string, resourceId: string): void {
-  const c = this._collections().find(x => x.id === collectionId);
-  if (!c) return;
+    const c = this._collections().find(x => x.id === collectionId);
+    if (!c) return;
 
-  if (c.resourceIds.includes(resourceId)) this.removeFromCollection(collectionId, resourceId);
-  else this.addToCollection(collectionId, resourceId);
-}
+    if (c.resourceIds.includes(resourceId)) this.removeFromCollection(collectionId, resourceId);
+    else this.addToCollection(collectionId, resourceId);
+  }
 }
