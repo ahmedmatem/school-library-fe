@@ -29,6 +29,7 @@ import {
 import { MeService } from './data-access/services/me.service';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from './data-access/auth.store';
+import { AuthBootstrapService } from './auth/auth-bootstrap';
 
 export function appInitializer(
   msal: MsalService,
@@ -84,11 +85,14 @@ export const appConfig: ApplicationConfig = {
     MsalService,
     MsalGuard,
     MsalBroadcastService,
-    provideAppInitializer(() => appInitializer(
-      inject(MsalService),
-      inject(MeService),
-      inject(AuthStore),
-      inject(Router)
-    )())
+    provideAppInitializer(() => {
+      appInitializer(
+        inject(MsalService),
+        inject(MeService),
+        inject(AuthStore),
+        inject(Router)
+      )();
+      inject(AuthBootstrapService);
+    })
   ]
 };
