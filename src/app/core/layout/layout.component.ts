@@ -1,17 +1,16 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
-import { EventMessage, EventType, AuthenticationResult } from '@azure/msal-browser';
+import { EventMessage, EventType, AuthenticationResult, InteractionStatus } from '@azure/msal-browser';
 import { filter } from 'rxjs/operators';
 import { AuthStore } from '../../data-access/auth.store';
 import { MeDto, MeService } from '../../data-access/services/me.service';
 import { firstValueFrom } from 'rxjs';
-import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterLink, RouterOutlet, JsonPipe],
+  imports: [RouterLink, RouterOutlet],
   templateUrl: './layout.component.html',
 })
 export class LayoutComponent implements OnInit {
@@ -39,7 +38,31 @@ export class LayoutComponent implements OnInit {
   meError = signal<string | null>(null);
 
   ngOnInit() {
-    this.refreshAccountState();
+    // Wait until MSAL is done (redirect/interaction finished)
+    this.msalBroadcast.inProgress$
+      .pipe(filter(status => status === InteractionStatus.None))
+      .subscribe(async () => {
+        // now accounts should be in cache
+        this.refreshAccountState();
+
+        // optionally: load /me whenever we know we're authenticated
+        const hasAccount =
+          this.msal.instance.getActiveAccount() ??
+          this.msal.instance.getAllAccounts()[0];
+
+        if (!hasAccount) {
+          this.auth.clear();
+          return;
+        }
+
+        try {
+          const dto = await firstValueFrom(this.meService.getMe());
+          this.auth.setMe(dto);
+        } catch {
+          // if API fails, keep cleared
+          this.auth.clear();
+        }
+      });
 
     this.msalBroadcast.msalSubject$
       .pipe(filter((msg: EventMessage) =>
