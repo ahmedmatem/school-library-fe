@@ -5,6 +5,20 @@ import { HttpClient } from '@angular/common/http';
 import { MSAL_SETTINGS } from '../../auth/msal.settings';
 import { firstValueFrom } from 'rxjs';
 
+type SubmitPendingResourceRequest = {
+    title: string;
+    subject: string;
+    author?: string | null;
+    description?: string | null;
+    type: 'FILE' | 'LINK';
+    format: string;          // e.g. "PDF"
+    language: string;        // "bg"
+    tags?: string[];
+    fileUrl?: string | null;
+    externalUrl?: string | null;
+    visibility?: string[];   // ["ALL"] or ["8"] or ["8А"]
+};
+
 @Injectable({ providedIn: 'root' })
 export class ModerationService {
     private http = inject(HttpClient);
@@ -24,7 +38,20 @@ export class ModerationService {
     }
 
     async submitPending(resource: Resource): Promise<void> {
-        await firstValueFrom(this.http.post<void>(`${this.base}/pending`, resource));
+        const body: SubmitPendingResourceRequest = {
+            title: resource.title,
+            subject: resource.subject,
+            author: resource.author ?? null,
+            description: resource.description ?? null,
+            type: resource.type,                 // "FILE" | "LINK"
+            format: resource.format,             // "PDF" etc
+            language: resource.language || 'bg',
+            tags: resource.tags ?? [],
+            fileUrl: resource.fileUrl ?? null,
+            externalUrl: resource.externalUrl ?? null,
+            visibility: resource.visibility?.length ? resource.visibility : ['ALL'],
+        };
+        await firstValueFrom(this.http.post<void>(`${this.base}/pending`, body));
     }
 
     async approve(pendingId: string): Promise<void> {

@@ -65,6 +65,8 @@
     </div>
 </nav>
 
+<pre class="text-white small">{{ auth.me() | json }}</pre>
+
 <main class="container py-3">
     <button class="btn btn-sm btn-secondary mb-3" type="button" (click)="callMe()">
         Call Me

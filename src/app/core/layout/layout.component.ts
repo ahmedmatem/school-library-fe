@@ -5,11 +5,13 @@ import { EventMessage, EventType, AuthenticationResult } from '@azure/msal-brows
 import { filter } from 'rxjs/operators';
 import { AuthStore } from '../../data-access/auth.store';
 import { MeDto, MeService } from '../../data-access/services/me.service';
+import { firstValueFrom } from 'rxjs';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterLink, RouterOutlet],
+  imports: [RouterLink, RouterOutlet, JsonPipe],
   templateUrl: './layout.component.html',
 })
 export class LayoutComponent implements OnInit {
@@ -45,12 +47,26 @@ export class LayoutComponent implements OnInit {
         msg.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
         msg.eventType === EventType.LOGOUT_SUCCESS
       ))
-      .subscribe((msg) => {
+      .subscribe(async (msg) => {
+        if (msg.eventType === EventType.LOGOUT_SUCCESS) {
+          this.auth.clear();
+          this.refreshAccountState();
+          return;
+        }
+
         if (msg.eventType === EventType.LOGIN_SUCCESS && msg.payload) {
           const res = msg.payload as AuthenticationResult;
           this.msal.instance.setActiveAccount(res.account);
         }
         this.refreshAccountState();
+
+        // reload DB user after login
+        try {
+          const dto = await firstValueFrom(this.meService.getMe());
+          this.auth.setMe(dto);
+        } catch {
+          this.auth.clear();
+        }
       });
   }
 
@@ -64,6 +80,7 @@ export class LayoutComponent implements OnInit {
     this.displayName.set(active?.name ?? active?.username ?? '');
 
     this.email.set(this.getEmailFromIdToken() ?? '');
+    console.log('ID token email:', this.email());
     this.auth.setIdTokenEmail(this.email());
   }
 
