@@ -17,15 +17,14 @@
             Отхвърли всички
         </button>
 
-        <a class="btn btn-outline-primary" routerLink="../add"><i class="fa-solid fa-plus"></i> Добави ресурс</a>
+        <a class="btn btn-outline-primary" routerLink="./add"><i class="fa-solid fa-plus"></i> Добави ресурс</a>
     </div>
 </div>
 
-@if (!isTeacher()) {
+@if (!isTeacher() && !isAdmin()) {
 <div class="alert alert-warning">Само учители имат достъп.</div>
 } @else {
-@if (pending().length === 0) {
-<div class="alert alert-info">Няма чакащи ресурси.</div>
+@if (pending().length === 0) {<div class="alert alert-info">Няма чакащи ресурси.</div>
 } @else {
 <div class="list-group">
     @for (p of sortedPending(); track p.pendingId) {

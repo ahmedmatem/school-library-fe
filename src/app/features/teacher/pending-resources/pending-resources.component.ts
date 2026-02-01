@@ -16,6 +16,7 @@ export class PendingResourcesComponent {
   private rs = inject(ResourceStore);
 
   isTeacher = this.auth.isTeacher;
+  isAdmin = this.auth.isAdmin;
   pending = this.moderation.pending;
   busy = signal(false);
 

@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
 import { teacherGuard } from './teacher.guard';
+import { adminGuard } from '../admin/admin.guard';
 
 export const TEACHER_ROUTES: Routes = [
     {
         path: '',
         canActivate: [teacherGuard],
+        canActivateChild: [teacherGuard],
         loadComponent: () => import('./teacher-shell.component').then(m => m.TeacherShellComponent),
         children: [
             { path: '', pathMatch: 'full', redirectTo: 'pending' },

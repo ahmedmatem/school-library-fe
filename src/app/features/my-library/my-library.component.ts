@@ -15,6 +15,7 @@ export class MyLibraryComponent {
   private lib = inject(LibraryStore);
   private auth = inject(AuthStore);
 
+  isAdmin = this.auth.isAdmin;
   isTeacher = this.auth.isTeacher;
   createShared = signal(false);
 

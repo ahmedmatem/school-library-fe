@@ -31,7 +31,8 @@ export class LayoutComponent implements OnInit {
   private msalBroadcast = inject(MsalBroadcastService);
   private meService = inject(MeService);
 
-  isLoggedIn = signal(false);
+  hasAccount = signal(false);
+  isLoggedIn = computed(() => this.hasAccount() || !!this.auth.me());
   displayName = signal('');
   email = signal<string>('');
 
@@ -47,16 +48,6 @@ export class LayoutComponent implements OnInit {
         // now accounts should be in cache
         this.refreshAccountState();
 
-        // optionally: load /me whenever we know we're authenticated
-        const hasAccount =
-          this.msal.instance.getActiveAccount() ??
-          this.msal.instance.getAllAccounts()[0];
-
-        if (!hasAccount) {
-          this.auth.clear();
-          return;
-        }
-
         try {
           const dto = await firstValueFrom(this.meService.getMe());
           this.auth.setMe(dto);
@@ -70,7 +61,7 @@ export class LayoutComponent implements OnInit {
     this.msalBroadcast.msalSubject$
       .pipe(filter((msg: EventMessage) =>
         msg.eventType === EventType.LOGIN_SUCCESS ||
-        msg.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
+        // msg.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
         msg.eventType === EventType.LOGOUT_SUCCESS
       ))
       .subscribe(async (msg) => {
@@ -84,7 +75,7 @@ export class LayoutComponent implements OnInit {
           const res = msg.payload as AuthenticationResult;
           this.msal.instance.setActiveAccount(res.account);
         }
-        this.refreshAccountState();
+        // this.refreshAccountState();
 
         // reload DB user after login
         try {
@@ -103,11 +94,11 @@ export class LayoutComponent implements OnInit {
 
     if (active) this.msal.instance.setActiveAccount(active);
 
-    this.isLoggedIn.set(!!active);
+    this.hasAccount.set(!!active);
+
     this.displayName.set(active?.name ?? active?.username ?? '');
 
     this.email.set(this.getEmailFromIdToken() ?? '');
-    console.log('ID token email:', this.email());
     this.auth.setIdTokenEmail(this.email());
   }
 
@@ -118,7 +109,10 @@ export class LayoutComponent implements OnInit {
     const account = this.msal.instance.getActiveAccount()
       ?? this.msal.instance.getAllAccounts()[0];
 
-    if (!account) return null;
+    if (!account) {
+      this.auth.clear();
+      return null;
+    }
 
     const claims: any = account.idTokenClaims;
 
@@ -128,16 +122,5 @@ export class LayoutComponent implements OnInit {
       ?? claims?.upn
       ?? (Array.isArray(claims?.emails) ? claims.emails[0] : null)
       ?? null;
-  }
-
-  // 👇 add this
-  callMe() {
-    this.meError.set(null);
-    this.me.set(null);
-
-    this.meService.getMe().subscribe({
-      next: (dto) => this.me.set(dto),
-      error: (err) => this.meError.set(err?.message ?? JSON.stringify(err)),
-    });
   }
 }

@@ -4,6 +4,8 @@ import { CatalogComponent } from './features/catalog/catalog.component';
 import { MyLibraryComponent } from './features/my-library/my-library.component';
 import { ResourceDetailsComponent } from './features/resource-details/resource-details.component';
 import { AdminUsersComponent } from './features/admin/users/admin-users.component';
+import { teacherGuard } from './features/teacher/teacher.guard';
+import { PendingResourcesComponent } from './features/teacher/pending-resources/pending-resources.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -13,6 +15,8 @@ export const routes: Routes = [
     { path: 'admin/users', component: AdminUsersComponent },
     {
         path: 'teacher',
+        component: PendingResourcesComponent,
+        canActivate: [teacherGuard],
         loadChildren: () => import('./features/teacher/teacher.routes').then(m => m.TEACHER_ROUTES)
     },
     {
