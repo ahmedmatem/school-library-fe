@@ -73,6 +73,15 @@
             <span class="text-muted">{{ resources().length }} резултата</span>
         </div>
 
+
+
+        @if (loading()) {
+        <div class="alert alert-secondary">Зареждане...</div>
+        }
+        @if (error()) {
+        <div class="alert alert-danger">{{ error() }}</div>
+        }
+
         @if (saveError()) {
         <div class="alert alert-danger py-2">{{ saveError() }}</div>
         }

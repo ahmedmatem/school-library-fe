@@ -6,7 +6,9 @@ import { LibraryStore } from '../../data-access/library.store';
 import { AddToCollectionModalComponent } from '../../shared/add-to-collection-modal.component/add-to-collection-modal.component';
 import { AuthStore } from '../../data-access/auth.store';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
+import { ResourceFilters, ResourceService } from '../../data-access/services/resource.service';
+import { Resource } from '../../data-access/models/resource.model';
 
 @Component({
   selector: 'app-catalog',
@@ -31,8 +33,15 @@ export class CatalogComponent {
 
   isTeacher = this.auth.isTeacher;
 
+  api = inject(ResourceService);
   rs = inject(ResourceStore);
   lib = inject(LibraryStore);
+
+  loading = signal(false);
+  error = signal<string | null>(null);
+  items = signal<Resource[]>([]);
+  filters = signal<ResourceFilters>({});
+  resources = computed(() => this.items());
 
   @ViewChild(AddToCollectionModalComponent) addModal?: AddToCollectionModalComponent;
 
@@ -46,8 +55,6 @@ export class CatalogComponent {
   );
 
   tags = this.rs.allTags;
-  filters = this.rs.filters;
-  resources = this.rs.resources;
 
   collections = computed(() => this.lib.collections());
 
@@ -56,6 +63,10 @@ export class CatalogComponent {
       // whenever catalog?denied=teacher appears, show the alert again
       if (this.deniedTeacher()) this.showDenied.set(true);
     });
+  }
+
+  ngOnInit() {
+    this.reload();
   }
 
   async toggleSave(id: string, ev?: Event) {
@@ -75,12 +86,55 @@ export class CatalogComponent {
   }
 
   // handlers
-  onQuery(v: string) { this.rs.setQuery(v); }
-  onSubject(v: string) { this.rs.setSubject(v); }
-  onType(v: any) { this.rs.setType(v); }
-  onFormat(v: any) { this.rs.setFormat(v); }
+  onQuery(v: string) {
+    this.filters.update(f => ({ ...f, query: v }));
+    this.reload();
+  }
 
-  clear() { this.rs.clearFilters(); }
+  onSubject(v: string) {
+    this.filters.update(f => ({ ...f, subject: v || undefined }));
+    this.reload();
+  }
+
+  onType(v: any) {
+    this.filters.update(f => ({ ...f, type: v || undefined }));
+    this.reload();
+  }
+
+  onFormat(v: any) {
+    this.filters.update(f => ({ ...f, format: v || undefined }));
+    this.reload();
+  }
+
+  onTag(v: string) {
+    this.filters.update(f => ({ ...f, tag: v || undefined }));
+    this.reload();
+  }
+
+  clear() {
+    this.filters.set({});
+    this.reload();
+  }
+
+  private inFlight?: Promise<void>;
+
+  reload() {
+    this.inFlight ??= this.doReload().finally(() => (this.inFlight = undefined));
+  }
+
+  private async doReload() {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const list = await firstValueFrom(this.api.getApproved(this.filters()));
+      this.items.set(list);
+    } catch (e: any) {
+      this.items.set([]);
+      this.error.set(e?.message ?? 'Грешка при зареждане на каталога.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   // toggleSaved(id: string) { this.lib.toggleSaved(id); }
   isSaved(id: string) { return this.lib.isSaved(id); }
@@ -99,8 +153,6 @@ export class CatalogComponent {
     const modal = new bootstrap.Modal(el);
     modal.show();
   }
-
-  onTag(v: string) { this.rs.setTag(v); }
 
   hasActiveFilters = computed(() => {
     const f = this.filters();

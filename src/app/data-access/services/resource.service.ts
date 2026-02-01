@@ -30,7 +30,7 @@ export class ResourceService {
     return this.http.get<Resource[]>(`${this.baseUrl}/approved`, {params});
   }
 
-  getById(id: string): Observable<Resource | undefined> {
+  getById(id: string): Observable<Resource> {
     return this.http.get<Resource>(`${this.baseUrl}/${id}`);
   }
 

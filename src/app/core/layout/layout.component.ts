@@ -2,7 +2,7 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { EventMessage, EventType, AuthenticationResult, InteractionStatus } from '@azure/msal-browser';
-import { filter } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 import { AuthStore } from '../../data-access/auth.store';
 import { MeDto, MeService } from '../../data-access/services/me.service';
 import { firstValueFrom } from 'rxjs';
@@ -47,24 +47,8 @@ export class LayoutComponent implements OnInit {
   ngOnInit() {
     // Wait until MSAL is done (redirect/interaction finished)
     this.msalBroadcast.inProgress$
-      .pipe(filter(status => status === InteractionStatus.None))
-      .subscribe(async () => {
-        // now accounts should be in cache
-        this.refreshAccountState();
-
-        try {
-          const dto = await firstValueFrom(this.meService.getMe());
-          this.auth.setMe(dto);
-          if (this.auth.isStaff()) {
-            this.rs.ensureLoaded();
-            await this.moderation.refresh();
-          }
-          await this.lib.refreshSavedFromApi();
-        } catch {
-          // if API fails, keep cleared
-          this.auth.clear();
-        }
-      });
+      .pipe(filter(status => status === InteractionStatus.None), take(1))
+      .subscribe(() => this.bootstrapAfterMsalReady());
 
     this.msalBroadcast.msalSubject$
       .pipe(filter((msg: EventMessage) =>
@@ -94,6 +78,42 @@ export class LayoutComponent implements OnInit {
           this.auth.clear();
         }
       });
+  }
+
+  private bootstrapped = false;
+  private async bootstrapAfterMsalReady() {
+    if(this.bootstrapped) return;
+    this.bootstrapped = true;
+    
+    this.refreshAccountState();
+
+    const hasAccount =
+      this.msal.instance.getActiveAccount() ??
+      this.msal.instance.getAllAccounts()[0] ??
+      null;
+
+    if (!hasAccount) {
+      this.auth.clear();
+      return;
+    }
+
+    try {
+      const dto = await firstValueFrom(this.meService.getMe());
+      this.auth.setMe(dto);
+
+      // do staff-only calls AFTER me is set
+      if (this.auth.isStaff()) {
+        await this.moderation.refresh();
+      }
+
+      // public catalog data (no auth required ideally)
+      await this.rs.ensureLoaded();
+
+      // saved stars (auth required)
+      await this.lib.refreshSavedFromApi();
+    } catch {
+      this.auth.clear();
+    }
   }
 
   private refreshAccountState() {
