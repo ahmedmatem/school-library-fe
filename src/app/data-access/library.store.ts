@@ -12,7 +12,6 @@ export interface Collection {
   createdAt: string;
 }
 
-const SAVED_KEY = 'sl_saved_ids_v1';
 const COLLECTIONS_KEY = 'sl_collections_v1';
 
 function safeParse<T>(s: string | null, fallback: T): T {

@@ -23,6 +23,9 @@ export class CatalogComponent {
     { initialValue: null }
   );
 
+  saveError = signal<string | null>(null);
+  savingId = signal<string | null>(null);
+
   deniedTeacher = mapDeniedTeacher(this.denied);
   showDenied = signal(true);
 
@@ -49,8 +52,6 @@ export class CatalogComponent {
   collections = computed(() => this.lib.collections());
 
   constructor() {
-    this.rs.ensureLoaded();
-
     effect(() => {
       // whenever catalog?denied=teacher appears, show the alert again
       if (this.deniedTeacher()) this.showDenied.set(true);
@@ -58,9 +59,19 @@ export class CatalogComponent {
   }
 
   async toggleSave(id: string, ev?: Event) {
-    ev?.stopPropagation(); // if card is clickable
-    if (!this.auth.me()) return; // not logged in -> do nothing (or redirect to login)
-    await this.lib.toggleSaved(id);
+    ev?.stopPropagation();
+    if (!this.auth.me()) return;
+
+    this.saveError.set(null);
+    this.savingId.set(id);
+
+    try {
+      await this.lib.toggleSaved(id);
+    } catch (e: any) {
+      this.saveError.set(e?.message ?? 'Грешка при запазване.');
+    } finally {
+      this.savingId.set(null);
+    }
   }
 
   // handlers
@@ -94,7 +105,7 @@ export class CatalogComponent {
   hasActiveFilters = computed(() => {
     const f = this.filters();
     return !!(f.query || f.tag || f.subject || f.type || f.format);
-  });  
+  });
 
   dismissDenied() {
     this.showDenied.set(false);

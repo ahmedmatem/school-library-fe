@@ -26,6 +26,7 @@ export class MyLibraryComponent {
 
   async ngOnInit() {
     await this.loadSaved();
+    await this.lib.refreshSavedFromApi();
   }
 
   async loadSaved() {
@@ -54,6 +55,7 @@ export class MyLibraryComponent {
 
   isAdmin = this.auth.isAdmin;
   isTeacher = this.auth.isTeacher;
+  isStaff = this.auth.isStaff;
   createShared = signal(false);
 
   newCollectionName = signal('');

@@ -55,9 +55,6 @@ export class LayoutComponent implements OnInit {
         try {
           const dto = await firstValueFrom(this.meService.getMe());
           this.auth.setMe(dto);
-          if (this.auth.isTeacher() || this.auth.isAdmin()) {
-            await this.moderation.refresh();
-          }
           if (this.auth.isStaff()) {
             this.rs.ensureLoaded();
             await this.moderation.refresh();

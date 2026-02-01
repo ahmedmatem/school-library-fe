@@ -9,17 +9,6 @@ export interface PendingResource {
   submittedAt: string;
 }
 
-const APPROVED_KEY = 'sl_approved_resources_v1';
-const PENDING_KEY = 'sl_pending_resources_v1';
-
-function safeParse<T>(s: string | null, fallback: T): T {
-  try { return s ? (JSON.parse(s) as T) : fallback; } catch { return fallback; }
-}
-
-function uid(prefix = 'p'): string {
-  return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -27,25 +16,16 @@ export class ModerationStore {
   private auth = inject(AuthStore);
   private moderationService = inject(ModerationService);
 
-  private _pending = signal<PendingResource[]>(
-    safeParse<PendingResource[]>(localStorage.getItem(PENDING_KEY), [])
-  );
-
-  private _approved = signal<Resource[]>(
-    safeParse<Resource[]>(localStorage.getItem(APPROVED_KEY), [])
-  );
+  // start empty; fill from API when staff is logged in
+  private _pending = signal<PendingResource[]>([]);
+  private _approved = signal<Resource[]>([]);
 
   pending = computed(() => this._pending());
   approved = computed(() => this._approved());
 
-  async seedApprovedIfEmpty(seed: Resource[]) {
-    const didSeed = await this.moderationService.seedApprovedIfEmpty(seed);
-    if (didSeed) await this.refresh();
-  }
-
   async refresh() {
     // prevent early calls
-    if (!this.auth.me()) return;          // inject AuthStore in store
+    if (!this.auth.me()) return;
     if (!(this.auth.isTeacher() || this.auth.isAdmin())) return;
 
     const p = await this.moderationService.getPending();
@@ -67,13 +47,6 @@ export class ModerationStore {
   async reject(pendingId: string) {
     await this.moderationService.reject(pendingId);
     await this.refresh();
-  }
-
-  clearAll() {
-    this._pending.set([]);
-    this._approved.set([]);
-    localStorage.removeItem(PENDING_KEY);
-    localStorage.removeItem(APPROVED_KEY);
   }
 
   async updateApproved(id: string, patch: Partial<Resource>) {

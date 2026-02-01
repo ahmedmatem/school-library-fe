@@ -77,7 +77,7 @@
         </div>
 
         <!-- PUT THE CHECKBOX HERE -->
-        @if (isTeacher()) {
+        @if (isStaff()) {
         <div class="form-check mt-2">
           <input class="form-check-input" type="checkbox" [checked]="createShared()"
             (change)="createShared.set($any($event.target).checked)">
@@ -86,7 +86,7 @@
         }
 
         <div class="form-text">
-          @if (isTeacher() && createShared()) {
+          @if (isStaff() && createShared()) {
           Споделените колекции се виждат от всички ученици.
           } @else {
           Тази колекция е лична (само за теб).
@@ -194,7 +194,7 @@
             </div>
             }
 
-            @if (isTeacher()) {
+            @if (isStaff()) {
             <div class="d-flex justify-content-end mt-3">
               <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteCollection(c.id)">
                 Изтрий споделена колекция
