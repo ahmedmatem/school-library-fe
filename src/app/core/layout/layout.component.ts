@@ -6,6 +6,7 @@ import { filter } from 'rxjs/operators';
 import { AuthStore } from '../../data-access/auth.store';
 import { MeDto, MeService } from '../../data-access/services/me.service';
 import { firstValueFrom } from 'rxjs';
+import { LibraryStore } from '../../data-access/library.store';
 
 @Component({
   selector: 'app-layout',
@@ -15,6 +16,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class LayoutComponent implements OnInit {
   auth = inject(AuthStore);
+  lib = inject(LibraryStore);
 
   classOptions = [
     '5', '6', '7',
@@ -58,6 +60,7 @@ export class LayoutComponent implements OnInit {
         try {
           const dto = await firstValueFrom(this.meService.getMe());
           this.auth.setMe(dto);
+          await this.lib.refreshSavedFromApi();
         } catch {
           // if API fails, keep cleared
           this.auth.clear();
@@ -87,6 +90,7 @@ export class LayoutComponent implements OnInit {
         try {
           const dto = await firstValueFrom(this.meService.getMe());
           this.auth.setMe(dto);
+          await this.lib.refreshSavedFromApi();
         } catch {
           this.auth.clear();
         }

@@ -45,7 +45,7 @@ export class MyLibraryComponent {
     return all.filter(r => ids.has(r.id));
   });
 
-  toggleSaved(id: string) { this.lib.toggleSaved(id); }
+  async toggleSaved(id: string) { await this.lib.toggleSaved(id); }
 
   createCollection() {
     const scope = this.isTeacher() && this.createShared() ? 'SHARED' : 'PRIVATE';
