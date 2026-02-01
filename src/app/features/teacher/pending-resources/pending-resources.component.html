@@ -21,7 +21,7 @@
     </div>
 </div>
 
-@if (!isTeacher() && !isAdmin()) {
+@if (!isStaff()) {
 <div class="alert alert-warning">Само учители имат достъп.</div>
 } @else {
 @if (pending().length === 0) {<div class="alert alert-info">Няма чакащи ресурси.</div>

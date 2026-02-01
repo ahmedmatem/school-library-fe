@@ -61,6 +61,7 @@ export class AddResourceComponent {
 
 
   isTeacher = this.auth.isTeacher;
+  isStaff = this.auth.isStaff;
 
   title = signal('');
   author = signal('');

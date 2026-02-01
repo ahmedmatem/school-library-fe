@@ -15,7 +15,7 @@ import { map } from 'rxjs';
   styleUrl: './catalog.component.css',
 })
 export class CatalogComponent {
-  private auth = inject(AuthStore);
+  auth = inject(AuthStore);
   private route = inject(ActivatedRoute);
 
   private denied = toSignal(
@@ -57,6 +57,12 @@ export class CatalogComponent {
     });
   }
 
+  async toggleSave(id: string, ev?: Event) {
+    ev?.stopPropagation(); // if card is clickable
+    if (!this.auth.me()) return; // not logged in -> do nothing (or redirect to login)
+    await this.lib.toggleSaved(id);
+  }
+
   // handlers
   onQuery(v: string) { this.rs.setQuery(v); }
   onSubject(v: string) { this.rs.setSubject(v); }
@@ -65,7 +71,7 @@ export class CatalogComponent {
 
   clear() { this.rs.clearFilters(); }
 
-  toggleSaved(id: string) { this.lib.toggleSaved(id); }
+  // toggleSaved(id: string) { this.lib.toggleSaved(id); }
   isSaved(id: string) { return this.lib.isSaved(id); }
 
   addToCollection(collectionId: string, resourceId: string) {

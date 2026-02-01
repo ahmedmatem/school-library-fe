@@ -3,7 +3,7 @@
     <a class="btn btn-outline-primary" routerLink="../add"><i class="fa-solid fa-plus"></i> Добави ресурс</a>
 </div>
 
-@if (!isTeacher()) {
+@if (!isStaff()) {
 <div class="alert alert-warning">Само учители имат достъп.</div>
 } @else {
 

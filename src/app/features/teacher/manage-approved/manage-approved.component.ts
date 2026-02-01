@@ -45,6 +45,7 @@ export class ManageApprovedComponent {
   allClasses = ALL_CLASSES;
 
   isTeacher = this.auth.isTeacher;
+  isStaff = this.auth.isStaff; // Teacher | Admin
 
   q = signal('');
   typeFilter = signal<string>('');

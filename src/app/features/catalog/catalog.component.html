@@ -152,10 +152,10 @@
                         <div class="d-flex gap-2">
                             <a class="btn btn-outline-primary w-100" [routerLink]="['/resources', r.id]">Отвори</a>
 
-                            <button class="btn w-100" [class.btn-success]="isSaved(r.id)()"
+                            <button class="btn w-100" [class.btn-success]="isSaved(r.id)()" [disabled]="!auth.me()"
                                 [class.btn-outline-success]="!isSaved(r.id)()" type="button"
-                                (click)="toggleSaved(r.id)">
-                                @if (isSaved(r.id)()) { Запазено } @else { Запази }
+                                (click)="toggleSave(r.id, $event)">
+                                @if (isSaved(r.id)()) { ★ Запазено } @else { ☆ Запази }
                             </button>
                         </div>
 
