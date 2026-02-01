@@ -7,6 +7,8 @@ import { AuthStore } from '../../data-access/auth.store';
 import { MeDto, MeService } from '../../data-access/services/me.service';
 import { firstValueFrom } from 'rxjs';
 import { LibraryStore } from '../../data-access/library.store';
+import { ModerationStore } from '../../data-access/moderation.store';
+import { ResourceStore } from '../../data-access/resource.store';
 
 @Component({
   selector: 'app-layout',
@@ -16,6 +18,8 @@ import { LibraryStore } from '../../data-access/library.store';
 })
 export class LayoutComponent implements OnInit {
   auth = inject(AuthStore);
+  moderation = inject(ModerationStore);
+  rs = inject(ResourceStore);
   lib = inject(LibraryStore);
 
   classOptions = [
@@ -51,6 +55,13 @@ export class LayoutComponent implements OnInit {
         try {
           const dto = await firstValueFrom(this.meService.getMe());
           this.auth.setMe(dto);
+          if (this.auth.isTeacher() || this.auth.isAdmin()) {
+            await this.moderation.refresh();
+          }
+          if (this.auth.isStaff()) {
+            this.rs.ensureLoaded();
+            await this.moderation.refresh();
+          }
           await this.lib.refreshSavedFromApi();
         } catch {
           // if API fails, keep cleared

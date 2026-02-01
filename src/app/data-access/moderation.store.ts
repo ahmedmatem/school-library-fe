@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Resource } from './models/resource.model';
 import { ModerationService } from './services/moderation.service';
+import { AuthStore } from './auth.store';
 
 export interface PendingResource {
   pendingId: string;
@@ -23,6 +24,7 @@ function uid(prefix = 'p'): string {
   providedIn: 'root',
 })
 export class ModerationStore {
+  private auth = inject(AuthStore);
   private moderationService = inject(ModerationService);
 
   private _pending = signal<PendingResource[]>(
@@ -36,14 +38,16 @@ export class ModerationStore {
   pending = computed(() => this._pending());
   approved = computed(() => this._approved());
 
-  constructor() { this.refresh(); }
-
   async seedApprovedIfEmpty(seed: Resource[]) {
     const didSeed = await this.moderationService.seedApprovedIfEmpty(seed);
     if (didSeed) await this.refresh();
   }
 
   async refresh() {
+    // prevent early calls
+    if (!this.auth.me()) return;          // inject AuthStore in store
+    if (!(this.auth.isTeacher() || this.auth.isAdmin())) return;
+
     const p = await this.moderationService.getPending();
     const a = await this.moderationService.getApproved();
     this._pending.set(p);

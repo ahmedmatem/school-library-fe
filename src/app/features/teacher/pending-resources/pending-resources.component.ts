@@ -29,10 +29,6 @@ export class PendingResourcesComponent {
     });
   });
 
-  constructor() {
-    this.rs.ensureLoaded();
-  }
-
   approve(pendingId: string) {
     this.moderation.approve(pendingId);
   }
